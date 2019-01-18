@@ -52,4 +52,4 @@ end
 println("\n")
 
 @info("Simulation Complete!");
-@info("Elaspsed time = " simulation_time)
+@info("Elaspsed time = ", simulation_time)

@@ -24,35 +24,35 @@ eqcycle
     
     - src: This folder contains the source files 
         
-        * gll_xwh: pre-tabulated interpolation points.
+        - gll_xwh: pre-tabulated interpolation points.
         
-        * paramters
+        - paramters
           
-          * defaultParamters.jl: the default set of parameters.
+          - defaultParamters.jl: the default set of parameters.
         
-        * initialConditions
+        - initialConditions
           
-          * defaultInitialConditions.jl: the default set of initial friction and stress conditions
+          - defaultInitialConditions.jl: the default set of initial friction and stress conditions
         
-        * setup.jl: set up the mesh and initial properties. These are the variables not changing through the simulation.
+        - setup.jl: set up the mesh and initial properties. These are the variables not changing through the simulation.
         
-        * main.jl: The main function for the time-loop.
+        - main.jl: The main function for the time-loop.
         
-        * Assemble.jl: Assemble the mass, stiffness, and other global matrices from the mesh.
+        - Assemble.jl: Assemble the mass, stiffness, and other global matrices from the mesh.
         
-        * BoundaryMatrix.jl: set the boundary conditions
+        - BoundaryMatrix.jl: set the boundary conditions
         
-        * dtevol.jl: compute the next timestep
+        - dtevol.jl: compute the next timestep
         
-        * FindNearestNode.jl: Given an arbitrary point, find the closest point in the mesh.
+        - FindNearestNode.jl: Given an arbitrary point, find the closest point in the mesh.
         
-        * GetGLL.jl: read from pre-tabulated interpolation points.
+        - GetGLL.jl: read from pre-tabulated interpolation points.
         
-        * NRsearch.jl: Newton-Rhapson root finding algorithm.
+        - NRsearch.jl: Newton-Rhapson root finding algorithm.
         
-        * PCG.jl: preconditioned conjugate gradient method to invert the matrix.
+        - PCG.jl: preconditioned conjugate gradient method to invert the matrix.
         
-        * otherfunctions.jl: some other element wise computations.
+        - otherfunctions.jl: some other element wise computations.
     
     - submit_jl: Script for submitting jobs on the flux. Run on flux as "./submit_jl <jobname>"
     

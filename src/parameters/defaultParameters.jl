@@ -108,7 +108,7 @@ function setParameters(res)
 
     yr2sec::Int = 365*24*60*60
     
-    Total_time::Int = 500*yr2sec     # Set the total time for simulation here
+    Total_time::Int = 1000*yr2sec     # Set the total time for simulation here
 
     CFL::Float64 = 0.6	#	Courant stability number
      
