@@ -4,10 +4,11 @@ Description of the slowest parts of code:
 - The main function (src/main.jl) has one time loop.
 
 - Preconditioned Conjugate Gradient: src/PCG.jl. This is the slowest step. 
+
+```julia
     while time < tmax:
         function PCG (src/main.jl: line 183)
-            # compute initial residuals.
-            
+            # compute initial residuals.        
             for n = 1:4000  # number of steps for convergence
                 # Element wise assembly
                 function element_computations (src/PCG.jl: line 75)
@@ -19,7 +20,7 @@ Description of the slowest parts of code:
             endfor
         endfunction
     endwhile
-
+```
 The above function has multiple nested for loops. The outer most while time loop cannot be changed. The number of steps for convergence can be improved. The element computation loop can be distributed to speed up calculations.
 
 The element computations loops are in src/PCG.jl: line 75, line 107.
