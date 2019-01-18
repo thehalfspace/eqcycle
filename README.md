@@ -1,13 +1,20 @@
-Spectral element method for earthquake cycle simulations with dynamic treatment of inertial effects.
-
-Written in Julia 1.0. Syntax is very similar to Matlab but it is much faster.
+Spectral element method for earthquake cycle simulations with fully dynamic inertial effects.
 
 Adapted from Kaneko et al. (2011), and J.P. Ampuero's [SEMLAB](https://www.mathworks.com/matlabcentral/fileexchange/6154-semlab).
 
-This project is incomplete, work in progress. To run the program 
+Running Instructions
+====================
 
-1. change parameters in src/parameters/defaultParameters.jl 
-2. edit the initial conditions in src/initialConditions/defaultInitialConditions
-3. Change the output file name in run.jl, add number of cpu processors (default 4)
-4. run the program in terminal using "julia run.jl"
-5. Wait for eternity before the results pop up! (I am still working on making it faster)
+1. open run.jl: 
+    a. Add the number of processors/workers in line 13. Default is 4.
+    b. set resolution in line 30. Resolution is an integer. Default resolution = 1. Target resolution = 20. 
+    c. Set the file name in line 45, run.jl.
+
+2. In the terminal run "julia run.jl". The output is a binary stored in data/ directory.
+
+-----------------------------------------
+Directory structure and File information
+=========================================
+1. 
+
+

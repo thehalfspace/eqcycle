@@ -23,10 +23,11 @@ addprocs(4)
 @everywhere include("$(@__DIR__)/src/setup.jl")
 
 
-# Set resolution
-res = 1
+# Set resolution as argument to the set parameters function
+# Current resolution = 1
+# Target resolution = 20
 
-@everywhere P = setParameters(res)
+@everywhere P = setParameters(1)
 @everywhere S = setup(P)
 
 @everywhere include("$(@__DIR__)/src/PCG.jl")               # Preconditioned conjugate gradient to invert matrix
