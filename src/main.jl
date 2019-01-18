@@ -117,9 +117,9 @@ function main(P::parameters, S::input_variables)
     dnew = SharedArray{Float64}(length(S.FltNI))
 
     # Preallocate variables with unknown size
-    output = results(zeros(P.FltNglob, 10000), zeros(P.FltNglob, 10000), 
-                     zeros(P.FltNglob, 10000), zeros(P.FltNglob, 1000), 
-                     zeros(P.FltNglob, 1000), zeros(P.FltNglob, 1000),
+    output = results(zeros(P.FltNglob, 100000), zeros(P.FltNglob, 100000), 
+                     zeros(P.FltNglob, 100000), zeros(P.FltNglob, 10000), 
+                     zeros(P.FltNglob, 10000), zeros(P.FltNglob, 10000),
                      zeros(1000), zeros(1000), zeros(P.FltNglob, 1000), 
                      zeros(P.FltNglob, 1000), zeros(P.FltNglob, 1000), 
                      zeros(1000), zeros(1000000), zeros(1000000))
