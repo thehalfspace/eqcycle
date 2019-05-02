@@ -2,17 +2,20 @@
 #   Compute the timestep for next iteration
 ############################################
 
-function dtevol(P::parameters, dt, dtmin, XiLf, FaultNglob, NFBC, Vf, isolver)
+function dtevol!(dt::Float64, dtmin::Float64, XiLf::Array{Float64}, FaultNglob::Int, NFBC::Int, Vf::Array{Float64}, isolver::Int)
+    
+    dtmax::Int = 50 * 24 * 60*60		# 5 days
+    dtincf::Float64 = 1.2
 
     if isolver == 1
 
         # initial value of dt
-        dtnx = P.dtmax
+        dtnx = dtmax
 
         # Adjust the timestep according to cell velocities and slip
         for i = NFBC:FaultNglob 
 
-            if abs(Vf[i])*P.dtmax > XiLf[i]
+            if abs(Vf[i])*dtmax > XiLf[i]
                 dtcell = XiLf[i]/abs(Vf[i])
 
                 if dtcell < dtnx
@@ -25,8 +28,8 @@ function dtevol(P::parameters, dt, dtmin, XiLf, FaultNglob, NFBC, Vf, isolver)
             dtnx = dtmin
         end
 
-        if dtnx > P.dtincf*dt
-            dtnx = P.dtincf*dt
+        if dtnx > dtincf*dt
+            dtnx = dtincf*dt
         end
 
         dt = dtnx

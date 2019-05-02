@@ -6,6 +6,7 @@ mutable struct results
     seismic_stress::Array{Float64,2}
     seismic_slipvel::Array{Float64,2}
     seismic_slip::Array{Float64,2}
+    index_eq::Array{Float64}
     is_stress::Array{Float64,2}
     is_slipvel::Array{Float64,2}
     is_slip::Array{Float64,2}
@@ -19,99 +20,65 @@ mutable struct results
     Vfmax::Array{Float64}
 end
 
-struct parameters
+struct params_int{T<:Int}
+    # Domain size
+    Nel::T
+    FltNglob::T
+
+    # Time parameters
+    yr2sec::T
+    Total_time::T
+    IDstate::T
     
-    Nsize::Int 
-    LX::Int
-    LY::Int
-    NelX::Int
-    NelY::Int
-
-    dxe::Float64
-    dye::Float64
-    Nel::Int
-    
-    P::Int    
-    NGLL::Int
-    FltNglob::Int
-
-    dx_dxi::Float64
-    dy_deta::Float64
-    jac::Float64
-    coefint1::Float64
-    coefint2::Float64
-
-    yr2sec::Int
-    Total_time::Int
-    CFL::Float64
-    IDstate::Int
-
-    dtincf::Float64
-    gamma_::Float64
-    tevneinc::Int
-    dtmax::Int
-
-    rho1::Float64
-    vs1::Float64
-
-    rho2::Float64
-    vs2::Float64
-
-    ETA::Float64
-
-    ThickX::Float64
-    ThickY::Float64
-
-    Vpl::Float64
-
-    fo::Array{Float64}
-    Vo::Array{Float64}
-    xLf::Array{Float64}
-
-    Vthres::Float64
-    Vevne::Float64
+    # Fault setup parameters
+    nglob::T
 
 end
 
-struct input_variables
-    
-    iglob::Array{Int,3}
-    nglob::Int
-    x::Array{Float64}
-    y::Array{Float64}
+struct params_float{T<:AbstractFloat}
+    # Jacobian for global -> local coordinate conversion
+    jac::T
+    coefint1::T
+    coefint2::T
 
-    xgll::Array{Float64}
-    wgll::Array{Float64}
-    H::Array{Float64,2}
-    Ht::Array{Float64,2}
+    ETA::T
 
-    W::Array{Float64,3}
-    M::Array{Float64}
-    MC::Array{Float64}
+    # Earthquake parameters
+    Vpl::T
+    Vthres::T
+    Vevne::T
 
-    BcLC::Array{Float64}
-    iBcL::Array{Int}
-    BcTC::Array{Float64}
-    iBcT::Array{Int}
-
-    FltB::Array{Float64}
-    iFlt::Array{Int64}
-    FltZ::Array{Float64}
-    FltX::Array{Float64}
-
-    cca::Array{Float64}
-    ccb::Array{Float64}
-    Seff::Array{Float64}
-    tauo::Array{Float64}
-
-    Nel_ETA::Float64
-    XiLf::Array{Float64}
-    diagKnew::Array{Float64}
-
-    FltIglobBC::Array{Int}
-    FltNI::Array{Int}
-
-    dt0::Float64
-
+    # Setup parameters
+    dt0::T
 end
 
+struct params_farray{T<:Array{Float64}}
+    fo::T
+    Vo::T
+    xLf::T
+    
+    M::T
+
+    BcLC::T
+    BcTC::T
+
+    FltB::T
+    FltZ::T
+    FltX::T
+
+    cca::T
+    ccb::T
+    Seff::T
+    tauo::T
+
+    XiLf::T
+    diagKnew::T
+end
+
+struct params_iarray{T<:Array{Int}}
+    iFlt::T
+    iBcL::T
+    iBcT::T
+    FltIglobBC::T
+    FltNI::T
+end

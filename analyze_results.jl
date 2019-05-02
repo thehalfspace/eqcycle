@@ -9,7 +9,7 @@ include("scripts/plots.jl")
 include("scripts/cumulative-slip.jl")
 
 # path to save files
-#  global path = "/Users/prith/JuliaSEM/plots/test22/"
+global path = "/Users/prith/jsem2/plots/test01/"
 
 # Deserialize the output
 using Serialization
@@ -18,7 +18,6 @@ open("data/test01.out") do f
     O = deserialize(f)
     sim_time = deserialize(f)
     P = deserialize(f)
-    S = deserialize(f)
 end
 
 
@@ -29,9 +28,7 @@ delfafter = O.delfafter
 stressdrops = O.taubefore-O.tauafter
 
 
-#  delfafter, stressdrops, tStart, tEnd, vhypo, hypo = Coslip(S, O.Slip, O.SlipVel, O.Stress, O.time_)
-
-Mw, del_sigma = moment_magnitude(P, S, delfafter, stressdrops, O.time_);
+#  Mw, del_sigma = moment_magnitude(P, S, delfafter, stressdrops, O.time_);
 
 function del_sigmaPlot(Mw, del_sigma)
 

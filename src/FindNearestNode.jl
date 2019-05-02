@@ -3,7 +3,7 @@
 function FindNearestNode(xin, yin, X, Y)
     nseis = length(xin)
     dist = zeros(nseis, 1)
-    iglob = zeros(Int32, nseis, 1)
+    iglob = zeros(Int, nseis, 1)
 
     for k = 1:nseis
         dist[k], iglob[k] = findmin( (X - xin[k]).^2 + (Y - yin[k]).^2 )

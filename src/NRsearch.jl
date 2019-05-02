@@ -3,41 +3,50 @@
 ####################################
 
 # Fault Boundary function
-function FBC(P, S, NFBC, psi1, Vf1, tau1, psi2, Vf2, tau2, psi, Vf, FltVfree, dt)
 
-    tauNR = SharedArray{Float64}(P.FltNglob)
+function FBC!(IDstate::Int, P::params_farray, NFBC::Int, FltNglob::Int, psi1::Array{Float64}, Vf1::Array{Float64}, tau1::Array{Float64}, psi2::Array{Float64}, Vf2::Array{Float64}, tau2::Array{Float64}, psi::Array{Float64}, Vf::Array{Float64}, FltVfree::Array{Float64}, dt::Float64)
 
-   @sync @distributed for j = NFBC:P.FltNglob 
+        Threads.@threads for tid in 1:Threads.nthreads()
+            len = div(length(NFBC:FltNglob), Threads.nthreads())
+            domain = ((tid-1)*len + NFBC):(tid*len + NFBC - 1)
 
-        psi1[j] = IDS(P.xLf[j], P.Vo[j], psi[j], dt, Vf[j], 1e-5, P.IDstate)
+            @inbounds @simd for j in domain
 
-        Vf1[j], tau1[j] = NRsearch(P.fo[j], P.Vo[j], S.cca[j], S.ccb[j], S.Seff[j],
-                                  tauNR[j], S.tauo[j], psi1[j], S.FltZ[j], FltVfree[j])
+                psi1[j] = IDS!(P.xLf[j], P.Vo[j], psi[j], dt, Vf[j], 1e-5, IDstate)
+                Vf1[j], tau1[j] = NRsearch!(P.fo[j], P.Vo[j], P.cca[j], P.ccb[j], P.Seff[j], 0. , P.tauo[j], psi1[j], P.FltZ[j], FltVfree[j])
     
-        if Vf[j] > 1e10 || isnan(Vf[j]) == 1 || isnan(tau1[j]) == 1
+                if Vf[j] > 1e10 || isnan(Vf[j]) == 1 || isnan(tau1[j]) == 1
+                    println("Fault Location = ", j)
+                    @error("NR SEARCH FAILED!")
+                    return
+                end
+        
+                psi2[j] = IDS2!(P.xLf[j], P.Vo[j], psi[j], psi1[j], dt, Vf[j], Vf1[j], IDstate)
+                Vf2[j], tau2[j] = NRsearch!(P.fo[j], P.Vo[j], P.cca[j], P.ccb[j], P.Seff[j],tau1[j], P.tauo[j], psi2[j], P.FltZ[j], FltVfree[j])
+            end
             
+        end
+
+        j = FltNglob
+        psi1[j] = IDS!(P.xLf[j], P.Vo[j], psi[j], dt, Vf[j], 1e-5, IDstate)
+        Vf1[j], tau1[j] = NRsearch!(P.fo[j], P.Vo[j], P.cca[j], P.ccb[j], P.Seff[j],0., P.tauo[j], psi1[j], P.FltZ[j], FltVfree[j])
+
+        if Vf[j] > 1e10 || isnan(Vf[j]) == 1 || isnan(tau1[j]) == 1
             println("Fault Location = ", j)
-            # Save simulation results
-            #filename = string(dir, "/data", name, "nrfail.jld2")
-            #@save filename results(Stress,SlipVel, Slip, time_) 
             @error("NR SEARCH FAILED!")
             return
         end
-        
-        psi2[j] = IDS2(P.xLf[j], P.Vo[j], psi[j], psi1[j], dt, Vf[j], Vf1[j], P.IDstate)
-        
-        # NRsearch 2nd loop
-        Vf2[j], tau2[j] = NRsearch(P.fo[j], P.Vo[j], S.cca[j], S.ccb[j], S.Seff[j],
-                                  tau1[j], S.tauo[j], psi2[j], S.FltZ[j], FltVfree[j])
 
-    end
+        psi2[j] = IDS2!(P.xLf[j], P.Vo[j], psi[j], psi1[j], dt, Vf[j], Vf1[j], IDstate)
+        Vf2[j], tau2[j] = NRsearch!(P.fo[j], P.Vo[j], P.cca[j], P.ccb[j], P.Seff[j],tau1[j], P.tauo[j], psi2[j], P.FltZ[j], FltVfree[j])
+
 
     return psi1, Vf1, tau1, psi2, Vf2, tau2
 end
 
 
 # Newton Rhapson search method
-function NRsearch(fo, Vo, cca, ccb, Seff, tau, tauo, psi, FltZ, FltVfree)
+function NRsearch!(fo::Float64, Vo::Float64, cca::Float64, ccb::Float64, Seff::Float64, tau::Float64, tauo::Float64, psi::Float64, FltZ::Float64, FltVfree::Float64)
 
     Vw = 1e10
     fact = 1 + (Vo/Vw)*exp(-psi)

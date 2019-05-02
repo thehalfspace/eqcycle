@@ -5,12 +5,14 @@
 #   Written in: Julia 1.0
 #
 #	Created: 06/20/2018
-#   Author: Prithvi Thakur (Original code by Kaneko et al.)
+#   Author: Prithvi Thakur (Original code by Kaneko et al. 2011)
 #
 #	Adapted from Kaneko et al. (2011)	
 #	and J.P. Ampuero's SEMLAB       	
 #
 #   CHANGELOG:
+#       * 04-20-2019: Implement multithreading for element calculations
+#       * 02-19-2019: Remove all the shared array stuff
 #       * 10-24-2018: Correct the free surface boundary condition
 #       * 08-27-2018: Remove the dependency on Parameters.jl
 #       * 08-26-2018: Using distributed for loop in PCG and NRsearch
@@ -31,67 +33,63 @@
 #       * Add separate files for parameters, initial conditions, functions
 ###############################################################################
 
-# Output results
-mutable struct results
-    seismic_stress::Array{Float64,2}
-    seismic_slipvel::Array{Float64,2}
-    seismic_slip::Array{Float64,2}
-    is_stress::Array{Float64,2}
-    is_slipvel::Array{Float64,2}
-    is_slip::Array{Float64,2}
-    tStart::Array{Float64}
-    tEnd::Array{Float64}
-    taubefore::Array{Float64,2}
-    tauafter::Array{Float64,2}
-    delfafter::Array{Float64,2}
-    hypo::Array{Float64}
-    time_::Array{Float64}
-    Vfmax::Array{Float64}
-end
 
+function main(P)
+    
+    # P[1] = integer
+    # P[2] = float
+    # P[3] = float array
+    # P[4] = integer array
+    # P[5] = iglob
+    # P[6] = W
+    # P[7] = H
+    # P[8] = Ht
 
-function main(P::parameters, S::input_variables)
-
-    wgll2 = S.wgll*S.wgll';
+    #  wgll2::Array{Float64,2} = S.wgll*S.wgll';
     
     # Time solver variables
-    dt = S.dt0
-    dtmin = dt
-    half_dt = 0.5*dtmin
-    half_dt_sq = 0.5*dtmin^2
+    dt::Float64 = P[2].dt0
+    dtmin::Float64 = dt
+    half_dt::Float64 = 0.5*dtmin
+    half_dt_sq::Float64 = 0.5*dtmin^2
 
     # dt modified slightly for damping
-    if P.ETA != 0
-	    dt = dt/sqrt(1 + 2*P.ETA)
+    if P[2].ETA != 0
+        dt = dt/sqrt(1 + 2*P[2].ETA)
     end
 
     # Initialize kinematic field: global arrays
-    d = SharedArray{Float64}(S.nglob)
-    v = SharedArray{Float64}(S.nglob)
+    d::Vector{Float64} = zeros(P[1].nglob)
+    v::Vector{Float64} = zeros(P[1].nglob)
     v .= 0.5e-3
-    a = SharedArray{Float64}(S.nglob)
+    a::Vector{Float64} = zeros(P[1].nglob)
     
     #.....................................
     # Stresses and time related variables
     #.....................................
-    tau = SharedArray{Float64}(P.FltNglob)
-    FaultC = SharedArray{Float64}(P.FltNglob)
-    Vf = SharedArray{Float64}(P.FltNglob)
-    Vf1 = SharedArray{Float64}(P.FltNglob)
-    Vf2 = SharedArray{Float64}(P.FltNglob)
-    Vf0 = SharedArray{Float64}(length(S.iFlt))
-    FltVfree = SharedArray{Float64}(length(S.iFlt))
-    psi = SharedArray{Float64}(P.FltNglob)
-    psi0 = SharedArray{Float64}(P.FltNglob)
-    psi1 = SharedArray{Float64}(P.FltNglob)
-    psi2 = SharedArray{Float64}(P.FltNglob)
-    tau1 = SharedArray{Float64}(P.FltNglob)
-    tau2 = SharedArray{Float64}(P.FltNglob)
-    tau3 = SharedArray{Float64}(P.FltNglob)
+    tau::Vector{Float64} = zeros(P[1].FltNglob)
+    FaultC::Vector{Float64} = zeros(P[1].FltNglob)
+    Vf::Vector{Float64} =  zeros(P[1].FltNglob)
+    Vf1::Vector{Float64} = zeros(P[1].FltNglob)
+    Vf2::Vector{Float64} = zeros(P[1].FltNglob)
+    Vf0::Vector{Float64} = zeros(length(P[4].iFlt))
+    FltVfree::Vector{Float64} = zeros(length(P[4].iFlt))
+    psi::Vector{Float64} = zeros(P[1].FltNglob)
+    psi0::Vector{Float64} = zeros(P[1].FltNglob)
+    psi1::Vector{Float64} = zeros(P[1].FltNglob)
+    psi2::Vector{Float64} = zeros(P[1].FltNglob)
+    tau1::Vector{Float64} = zeros(P[1].FltNglob)
+    tau2::Vector{Float64} = zeros(P[1].FltNglob)
+    tau3::Vector{Float64} = zeros(P[1].FltNglob)
+    tauAB::Vector{Float64} = zeros(P[1].FltNglob)
+    
+    # Vectorized element calculations
+    a_elem::Array{Float64,3} = zeros(size(P[5])) 
+    Conn = sparse(P[5][:], collect(1:size(P[6][:])[1]),1)
 
 
     # Initial state variable
-    psi = S.tauo./(S.Seff.*S.ccb) - P.fo./S.ccb - (S.cca./S.ccb).*log.(2*v[S.iFlt]./P.Vo)
+    psi = P[3].tauo./(P[3].Seff.*P[3].ccb) - P[3].fo./P[3].ccb - (P[3].cca./P[3].ccb).*log.(2*v[P[4].iFlt]./P[3].Vo)
     psi0 .= psi[:]
 
     isolver::Int = 1
@@ -100,63 +98,64 @@ function main(P::parameters, S::input_variables)
     # Skip lines 492-507: Outloc1, 2, variables.
 
     # Display important parameters
-    println("Total number of nodes on fault: ", P.FltNglob)
-    println("Average node spacing: ", P.LX/(P.FltNglob-1))
-    @printf("dt: %1.09f s\n", dt)
+    #  println("Total number of nodes on fault: ", P.FltNglob)
+    #  println("Average node spacing: ", P.LX/(P.FltNglob-1))
+    #  @printf("dt: %1.09f s\n", dt)
 
     # Some more initializations
-    r::Array{Float64} = zeros(S.nglob)
-    beta_::Array{Float64} = zeros(S.nglob)
-    alpha_::Array{Float64} = zeros(S.nglob)
+    r::Vector{Float64} = zeros(P[1].nglob)
+    beta_::Vector{Float64} = zeros(P[1].nglob)
+    alpha_::Vector{Float64} = zeros(P[1].nglob)
 
-    F = SharedArray{Float64}(S.nglob)
-    dPre = SharedArray{Float64}(S.nglob)
-    vPre = SharedArray{Float64}(S.nglob)
-    dd = SharedArray{Float64}(S.nglob)
-    dacum = SharedArray{Float64}(S.nglob)
-    dnew = SharedArray{Float64}(length(S.FltNI))
+    F::Vector{Float64} = zeros(P[1].nglob)
+    dPre::Vector{Float64} = zeros(P[1].nglob)
+    vPre::Vector{Float64} = zeros(P[1].nglob)
+    dd::Vector{Float64} = zeros(P[1].nglob)
+    dacum::Vector{Float64} = zeros(P[1].nglob)
+    dnew::Vector{Float64} = zeros(length(P[4].FltNI))
 
     # Preallocate variables with unknown size
-    output = results(zeros(P.FltNglob, 100000), zeros(P.FltNglob, 100000), 
-                     zeros(P.FltNglob, 100000), zeros(P.FltNglob, 10000), 
-                     zeros(P.FltNglob, 10000), zeros(P.FltNglob, 10000),
-                     zeros(1000), zeros(1000), zeros(P.FltNglob, 1000), 
-                     zeros(P.FltNglob, 1000), zeros(P.FltNglob, 1000), 
-                     zeros(1000), zeros(1000000), zeros(1000000))
+    output = results(zeros(P[1].FltNglob, 800000), zeros(P[1].FltNglob, 800000), 
+                     zeros(P[1].FltNglob, 800000), zeros(1000000), 
+                     zeros(P[1].FltNglob, 10000), zeros(P[1].FltNglob, 10000), 
+                     zeros(P[1].FltNglob, 10000),zeros(1000), zeros(10000), 
+                     zeros(P[1].FltNglob, 10000), zeros(P[1].FltNglob, 10000), 
+                     zeros(P[1].FltNglob, 10000), zeros(10000), zeros(10000000), 
+                     zeros(10000000))
     
     # Save output variables at certain timesteps: define those timesteps
-    tvsx::Float64 = 2*P.yr2sec  # 2 years for interseismic period
+    tvsx::Float64 = 2*P[1].yr2sec  # 2 years for interseismic period
     tvsxinc::Float64 = tvsx
 
-    tevneinc::Int64 = 1    # 1 second for seismic period
-    Vevne::Float64 = 0.001  # Velocity threshold for onset of earthquakes
-    delfref = zeros(P.FltNglob)
+    tevneinc::Int64 = 1    # 5 second for seismic period
+    delfref = zeros(P[1].FltNglob)
 
     # Iterators
-    idelevne = 0
-    tevneb = 0
-    tevne = 0
-    ntvsx = 0
-    nevne = 0
-    slipstart = 0
-    it_s = 0; it_e = 0  # iterators for start and end of events
+    idelevne::Int= 0
+    tevneb::Float64= 0
+    tevne::Float64= 0
+    ntvsx::Int= 0
+    nevne::Int= 0
+    slipstart::Int= 0
+    idd::Int = 0
+    it_s = 0; it_e = 0
 
-    v = v[:] .- 0.5*P.Vpl
-    Vf = 2*v[S.iFlt]
-    iFBC::Array{Int64} = findall(abs.(S.FltX) .> 24e3)
+    v = v[:] .- 0.5*P[2].Vpl
+    Vf = 2*v[P[4].iFlt]
+    iFBC::Vector{Int64} = findall(abs.(P[3].FltX) .> 24e3)
     NFBC::Int64 = length(iFBC) + 1
-    Vf[iFBC] .= 0
+    Vf[iFBC] .= 0.
 
 
-    v[S.FltIglobBC] .= 0
+    v[P[4].FltIglobBC] .= 0.
 
     #....................
     # Start of time loop
     #....................
     it = 0
-    t = 0
+    t = 0.
 
-    while t < P.Total_time
+    while t < P[1].Total_time
         it = it + 1
         t = t + dt
 
@@ -167,59 +166,63 @@ function main(P::parameters, S::input_variables)
             vPre .= v
             dPre .= d
 
-            Vf0 .= 2*v[S.iFlt] .+ P.Vpl
+            Vf0 .= 2*v[P[4].iFlt] .+ P[2].Vpl
             Vf  .= Vf0
 
-            @inbounds for p1 = 1:2
+            for p1 = 1:2
                 
-                # Compute the forcing term
-                F .= 0
-                F[S.iFlt] .= dPre[S.iFlt] .+ v[S.iFlt]*dt
+                # Compute the on-Fault displacement
+                F .= 0.
+                F[P[4].iFlt] .= dPre[P[4].iFlt] .+ v[P[4].iFlt]*dt
 
                 # Assign previous displacement field as initial guess
-                dnew .= d[S.FltNI]
+                dnew .= d[P[4].FltNI]
 
+                
                 # Solve d = K^-1F by PCG
-                dnew = PCG(P, S.diagKnew, dnew, F, S.iFlt, S.FltNI,
-                              S.H, S.Ht, S.iglob, S.nglob, S.W)
+                dnew = PCG!(P[2], P[1].Nel, P[3].diagKnew, dnew, F, P[4].iFlt, 
+                            P[4].FltNI,P[7], P[8], P[5], P[1].nglob, P[6], 
+                            a_elem, Conn)
+                #  dnew = conj_grad(P, F)
                 
                 # update displacement on the medium
-                d[S.FltNI] .= dnew
+                d[P[4].FltNI] .= dnew
 
                 # make d = F on the fault
-                d[S.iFlt] .= F[S.iFlt]
+                d[P[4].iFlt] .= F[P[4].iFlt]
 
                 # Compute on-fault stress
-                a .= 0
+                a .= 0.
+
+                a_elem .= 0
 
                 # Compute forcing (acceleration) for each element
-                a = element_computation(P, S.iglob, d, S.H, S.Ht, S.W, a)
+                a_elem = element_computation!(P[2], P[5], d, P[7], P[8], P[6], P[1].Nel)
+                mul!(a, Conn, a_elem[:])[P[4].FltIglobBC] .= 0.
 
-                a[S.FltIglobBC] .= 0
-                tau1 .= -a[S.iFlt]./S.FltB
+                tau1 .= -a[P[4].iFlt]./P[3].FltB
                 
                 # Function to calculate sliprate
-                psi1, Vf1 = slrFunc(P, NFBC, P.FltNglob, psi, psi1, Vf, Vf1, 
-                                    P.IDstate, tau1, S.tauo, S.Seff, S.cca, S.ccb, dt)
+                psi1, Vf1 = slrFunc!(P[3], NFBC, P[1].FltNglob, psi, psi1, Vf, Vf1, P[1].IDstate, tau1, dt)
 
-                Vf1[iFBC] .= P.Vpl
+                Vf1[iFBC] .= P[2].Vpl
                 Vf .= (Vf0 + Vf1)/2
-                v[S.iFlt] .= 0.5*(Vf .- P.Vpl)
+                v[P[4].iFlt] .= 0.5*(Vf .- P[2].Vpl)
 
             end
 
             psi .= psi1[:]
             tau .= tau1[:]
-            tau[iFBC] .= 0
-            Vf1[iFBC] .= P.Vpl
+            tau[iFBC] .= 0.
+            Vf1[iFBC] .= P[2].Vpl
 
-            v[S.iFlt] .= 0.5*(Vf1 .- P.Vpl)
-            v[S.FltNI] .= (d[S.FltNI] .- dPre[S.FltNI])/dt
+            v[P[4].iFlt] .= 0.5*(Vf1 .- P[2].Vpl)
+            v[P[4].FltNI] .= (d[P[4].FltNI] .- dPre[P[4].FltNI])/dt
 
             # Line 731: P_MA: Omitted
-            a .= 0
-            d[S.FltIglobBC] .= 0
-            v[S.FltIglobBC] .= 0
+            a .= 0.
+            d[P[4].FltIglobBC] .= 0.
+            v[P[4].FltIglobBC] .= 0.
             
             # If isolver != 1, or max slip rate is < 10^-2 m/s
         else
@@ -232,49 +235,48 @@ function main(P::parameters, S::input_variables)
 
             # Prediction
             v .= v .+ half_dt.*a
-            a .= 0
+            a .= 0.
+            
+            a_elem .= 0
 
             # Internal forces -K*d[t+1] stored in global array 'a'
             # This is different from matlab code; will change if Nel_ETA is not zero
-            a = element_computation2(P, S.iglob, d, S.H, S.Ht, S.W, a)
-            a[S.FltIglobBC] .= 0
+            a_elem = element_computation!(P[2], P[5], d, P[7], P[8], P[6], P[1].Nel)
+           mul!(a, -Conn, a_elem[:])[P[4].FltIglobBC] .= 0.
 
             # Absorbing boundaries
-            a[S.iBcL] .= a[S.iBcL] .- S.BcLC.*v[S.iBcL]
-            a[S.iBcT] .= a[S.iBcT] .- S.BcTC.*v[S.iBcT]
+            a[P[4].iBcL] .= a[P[4].iBcL] .- P[3].BcLC.*v[P[4].iBcL]
+            a[P[4].iBcT] .= a[P[4].iBcT] .- P[3].BcTC.*v[P[4].iBcT]
 
             ###### Fault Boundary Condition: Rate and State #############
-            FltVfree .= 2*v[S.iFlt] .+ 2*half_dt*a[S.iFlt]./S.M[S.iFlt]
-            Vf .= 2*vPre[S.iFlt] .+ P.Vpl
+            FltVfree .= 2*v[P[4].iFlt] .+ 2*half_dt*a[P[4].iFlt]./P[3].M[P[4].iFlt]
+            Vf .= 2*vPre[P[4].iFlt] .+ P[2].Vpl
 
 
             # Sliprate and NR search
-            psi1, Vf1, tau1, psi2, Vf2, tau2 = FBC(P, S, NFBC, psi1, Vf1, 
-                                    tau1, psi2, Vf2, tau2, psi, Vf, FltVfree, dt)
-            
+            psi1, Vf1, tau1, psi2, Vf2, tau2 = FBC!(P[1].IDstate, P[3], NFBC, P[1].FltNglob, psi1, Vf1, tau1, psi2, Vf2, tau2, psi, Vf, FltVfree, dt)
 
-            tau .= tau2 .- S.tauo
-            tau[iFBC] .= 0
+            tau .= tau2 .- P[3].tauo
+            tau[iFBC] .= 0.
             psi .= psi2
-            #KD = a[:]
-            a[S.iFlt] .= a[S.iFlt] .- S.FltB.*tau
+            a[P[4].iFlt] .= a[P[4].iFlt] .- P[3].FltB.*tau
             ########## End of fault boundary condition ############## 
 
 
             # Solve for a_new
-            a .= a./S.M
+            a .= a./P[3].M
             
             # Correction
             v .= v .+ half_dt*a
 
-            v[S.FltIglobBC] .= 0
-            a[S.FltIglobBC] .= 0
+            v[P[4].FltIglobBC] .= 0.
+            a[P[4].FltIglobBC] .= 0.
 
             #### Line 861: Omitting P_Ma
             
         end # of isolver if loop
         
-        Vfmax = 2*maximum(v[S.iFlt]) .+ P.Vpl
+        Vfmax = 2*maximum(v[P[4].iFlt]) .+ P[2].Vpl
 
 
         #----
@@ -288,19 +290,19 @@ function main(P::parameters, S::input_variables)
         #-----
         # Output the variables before and after events
         #-----
-        if Vfmax > 1.01*P.Vthres && slipstart == 0
+        if Vfmax > 1.01*P[2].Vthres && slipstart == 0
             it_s = it_s + 1
-            delfref = 2*d[S.iFlt] .+ P.Vpl*t
+            delfref = 2*d[P[4].iFlt] .+ P[2].Vpl*t
             slipstart = 1
             output.tStart[it_s] = output.time_[it]
-            output.taubefore[:,it_s] = (tau +S.tauo)./1e6
-            vhypo, indx = findmax(2*v[S.iFlt] .+ P.Vpl)
-            output.hypo[it_s] = S.FltX[indx]
+            output.taubefore[:,it_s] = (tau +P[3].tauo)./1e6
+            vhypo, indx = findmax(2*v[P[4].iFlt] .+ P[2].Vpl)
+            output.hypo[it_s] = P[3].FltX[indx]
         end
-        if Vfmax < 0.99*P.Vthres && slipstart == 1
+        if Vfmax < 0.99*P[2].Vthres && slipstart == 1
             it_e = it_e + 1
-            output.delfafter[:,it_e] = 2*d[S.iFlt] .+ P.Vpl*t .- delfref 
-            output.tauafter[:,it_e] = (tau + S.tauo)./1e6
+            output.delfafter[:,it_e] = 2*d[P[4].iFlt] .+ P[2].Vpl*t .- delfref 
+            output.tauafter[:,it_e] = (tau + P[3].tauo)./1e6
             output.tEnd[it_e] = output.time_[it]
             slipstart = 0
         end 
@@ -309,39 +311,44 @@ function main(P::parameters, S::input_variables)
         #-----
         if output.time_[it] > tvsx
             ntvsx = ntvsx + 1
-            output.is_slip[:,ntvsx] = 2*d[S.iFlt] .+ P.Vpl*t
-            output.is_slipvel[:,ntvsx] = 2*v[S.iFlt] .+ P.Vpl
-            output.is_stress[:,ntvsx] = (tau + S.tauo)./1e6
+            idd += 1
+            output.is_slip[:,ntvsx] = 2*d[P[4].iFlt] .+ P[2].Vpl*t
+            output.is_slipvel[:,ntvsx] = 2*v[P[4].iFlt] .+ P[2].Vpl
+            output.is_stress[:,ntvsx] = (tau + P[3].tauo)./1e6
+            output.index_eq[idd] = 1
 
             tvsx = tvsx + tvsxinc
         end
 
-        if Vfmax > Vevne
+        if Vfmax > P[2].Vevne
             if idelevne == 0
                 nevne = nevne + 1
+                idd += 1
                 idelevne = 1
                 tevneb = output.time_[it]
                 tevne = tevneinc
 
-                output.seismic_slip[:,nevne] = 2*d[S.iFlt] .+ P.Vpl*t
-                output.seismic_slipvel[:,nevne] = 2*v[S.iFlt] .+ P.Vpl
-                output.seismic_stress[:,nevne] = (tau + S.tauo)./1e6
+                output.seismic_slip[:,nevne] = 2*d[P[4].iFlt] .+ P[2].Vpl*t
+                output.seismic_slipvel[:,nevne] = 2*v[P[4].iFlt] .+ P[2].Vpl
+                output.seismic_stress[:,nevne] = (tau + P[3].tauo)./1e6
+                output.index_eq[idd] = 2
             end
 
             if idelevne == 1 && (output.time_[it] - tevneb) > tevne
                 nevne = nevne + 1
+                idd += 1
                 
-                output.seismic_slip[:,nevne] = 2*d[S.iFlt] .+ P.Vpl*t
-                output.seismic_slipvel[:,nevne] = 2*v[S.iFlt] .+ P.Vpl
-                output.seismic_stress[:,nevne] = (tau + S.tauo)./1e6
-
+                output.seismic_slip[:,nevne] = 2*d[P[4].iFlt] .+ P[2].Vpl*t
+                output.seismic_slipvel[:,nevne] = 2*v[P[4].iFlt] .+ P[2].Vpl
+                output.seismic_stress[:,nevne] = (tau + P[3].tauo)./1e6
+                output.index_eq[idd] = 2
                 tevne = tevne + tevneinc
             end
         end
 
         # Output timestep info on screen
         if mod(it,500) == 0
-            @printf("\nTime (yr) = %1.5g", t/P.yr2sec)
+            @printf("Time (yr) = %1.5g\n", t/P[1].yr2sec)
         end
         
         # Determine quasi-static or dynamic regime based on max-slip velocity
@@ -352,16 +359,11 @@ function main(P::parameters, S::input_variables)
         end
         
         output.Vfmax[it] = Vfmax 
-
-        # Some variables for each timestep
-        #  output.Stress[:,it] = (tau + S.tauo)./1e6
-        #  output.SlipVel[:,it] = 2*v[S.iFlt] .+ P.Vpl
-        #  output.Slip[:,it] = 2*d[S.iFlt] .+ P.Vpl*t
        
-        current_sliprate = 2*v[S.iFlt] .+ P.Vpl
+        current_sliprate = 2*v[P[4].iFlt] .+ P[2].Vpl
 
         # Compute next timestep dt
-        dt = dtevol(P, dt , dtmin, S.XiLf, P.FltNglob, NFBC, current_sliprate, isolver)
+        dt = dtevol!(dt , dtmin, P[3].XiLf, P[1].FltNglob, NFBC, current_sliprate, isolver)
 
     end # end of time loop
     
@@ -369,6 +371,7 @@ function main(P::parameters, S::input_variables)
     output.seismic_stress   = output.seismic_stress[:,1:nevne]
     output.seismic_slipvel  = output.seismic_slipvel[:,1:nevne]
     output.seismic_slip     = output.seismic_slip[:,1:nevne]
+    output.index_eq         = output.index_eq[1:idd]
     output.is_stress        = output.is_stress[:,1:ntvsx]
     output.is_slipvel       = output.is_slipvel[:,1:ntvsx]
     output.is_slip          = output.is_slip[:,1:ntvsx]
@@ -380,11 +383,26 @@ function main(P::parameters, S::input_variables)
     output.hypo             = output.hypo[1:it_s]
     output.time_            = output.time_[1:it]
     output.Vfmax            = output.Vfmax[1:it]
-    #  output.time_ = output.time_[1:it]
-    #  output.Stress = output.Stress[:,1:it]
-    #  output.SlipVel = output.SlipVel[:,1:it]
-    #  output.Slip = output.Slip[:,1:it]
 
     return output
 
 end
+
+mutable struct results
+    seismic_stress::Matrix{Float64}
+    seismic_slipvel::Matrix{Float64}
+    seismic_slip::Matrix{Float64}
+    index_eq::Vector{Float64}
+    is_stress::Matrix{Float64}
+    is_slipvel::Matrix{Float64}
+    is_slip::Matrix{Float64}
+    tStart::Vector{Float64}
+    tEnd::Vector{Float64}
+    taubefore::Matrix{Float64}
+    tauafter::Matrix{Float64}
+    delfafter::Matrix{Float64}
+    hypo::Vector{Float64}
+    time_::Vector{Float64}
+    Vfmax::Vector{Float64}
+end
+

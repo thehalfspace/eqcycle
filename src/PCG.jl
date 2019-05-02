@@ -5,41 +5,37 @@
 #                                              
 ################################################
 
-#using JLD2
-
-function PCG(P::parameters, diagKnew, dnew, F, iFlt,
-             FltNI, H, Ht, iglob, nglob, W)
+function PCG!(P::params_float, Nel::Int, diagKnew::Array{Float64}, dnew::Array{Float64}, F::Array{Float64}, iFlt::Array{Int},FltNI::Array{Int}, H::Array{Float64,2}, Ht::Array{Float64,2}, iglob::Array{Int,3}, nglob::Int, W::Array{Float64,3}, a_elem::Array{Float64}, Conn)
     
-    a_local = SharedArray{Float64}(nglob)
-    dd_local = zeros(nglob)
-    p_local = zeros(nglob)
+    a_local::Array{Float64} = zeros(nglob)
+    dd_local::Array{Float64} = zeros(nglob)
+    p_local::Array{Float64} = zeros(nglob)
    
-
-    a_local = element_computation(P, iglob, F, H, Ht, W, a_local)
-    Fnew = -a_local[FltNI]
+    a_elem = element_computation!(P, iglob, F, H, Ht, W, Nel)
+    Fnew = -mul!(a_local, Conn, a_elem[:])[FltNI]
     
     dd_local[FltNI] .= dnew
-    dd_local[iFlt] .= 0
+    dd_local[iFlt] .= 0.
 
-    a_local[:] .= 0
+    a_local[:] .= 0.
     
-    a_local = element_computation(P, iglob, dd_local, H, Ht, W, a_local)
-    anew = a_local[FltNI]
+    a_elem = element_computation!(P, iglob, dd_local, H, Ht, W, Nel)
+        
+    anew = mul!(a_local, Conn, a_elem[:])[FltNI]
 
     # Initial residue
     rnew = Fnew - anew
     znew = rnew./diagKnew
     pnew = znew
-    p_local[:] .= 0
+    p_local[:] .= 0.
     p_local[FltNI] = pnew
 
-    @inbounds for n = 1:4000
-        anew[:] .= 0
-        a_local[:] .= 0
+    @inbounds for n = 1:8000
+        anew[:] .= 0.
+        a_local[:] .= 0.
         
-        a_local = element_computation(P, iglob, p_local, H, Ht, W, a_local)
-
-        anew = a_local[FltNI]
+        a_elem = element_computation!(P, iglob, p_local, H, Ht, W, Nel)
+        anew = mul!(a_local, Conn, a_elem[:])[FltNI]
 
         alpha_ = znew'*rnew/(pnew'*anew)
         dnew  .+= alpha_*pnew
@@ -49,16 +45,16 @@ function PCG(P::parameters, diagKnew, dnew, F, iFlt,
         znew = rnew./diagKnew
         beta_ = znew'*rnew/(zold'*rold)
         pnew = znew + beta_*pnew
-        p_local[:] .= 0
+        p_local[:] .= 0.
         p_local[FltNI] = pnew
 
         if norm(rnew)/norm(Fnew) < 1e-5
             break;
         end
 
-        if n == 4000 || norm(rnew)/norm(Fnew) > 1e10
+        if n == 8000 || norm(rnew)/norm(Fnew) > 1e10
             print(norm(rnew)/norm(Fnew))
-            println("n = ", n)
+            println("\nn = ", n)
 
             #filename = string(dir, "/data", name, "pcgfail.jld2")
             #@save filename dnew rnew Fnew
@@ -71,53 +67,21 @@ function PCG(P::parameters, diagKnew, dnew, F, iFlt,
 end
 
 
-# Sub function to be used inside PCG
-function element_computation(P::parameters, iglob, F_local, H, Ht, W, a_local)
-    
-    @sync @distributed for eo = 1:P.Nel
+# Multi-threading
+function element_computation!(P::params_float, iglob::Array{Int,3}, F_local::Array{Float64}, H::Array{Float64,2}, Ht::Array{Float64,2}, W::Array{Float64,3}, Nel)
+    a_local = zeros(size(F_local))
+    a_elem = zeros(size(iglob))
+    Threads.@threads for tid in 1:Threads.nthreads()
+        len = div(Nel, Threads.nthreads())
+        domain = ((tid-1)*len + 1):tid*len
 
-        ig = iglob[:,:,eo]
-
-        locall = local_calc(P, F_local[ig], H, Ht, W[:,:,eo])
-        
-        #  println(locall)
-
-        # Assemble into global vector
-        a_local[ig] .+= locall
-
+        @inbounds @simd for eo in domain
+            ig = iglob[:,:,eo]
+            Wlocal = W[:,:,eo]
+            locall = F_local[ig]
+            a_elem[:,:,eo] =  P.coefint1*H*(Wlocal.*(Ht*locall)) + P.coefint2*(Wlocal.*(locall*H))*Ht
+        end
     end
-
-    return a_local
-
+    return a_elem
 end
 
-@everywhere function local_calc(P, locall, H, Ht, Wlocal)
-
-    # Gradients wrt local variables
-    d_xi = Ht*locall
-    d_eta = locall*H
-
-    # Element contribution to the internal forces
-    locall = P.coefint1*H*(Wlocal.*d_xi) + 
-            P.coefint2*(Wlocal.*d_eta)*Ht
-    return locall 
-end
-
-# Compute the displacement/forcing for each element
-function element_computation2(P::parameters, iglob, F_local, H, Ht, W, a_local)
-    
-   @sync @distributed for eo = 1:P.Nel
-
-        # Switch to local element representation
-        ig = iglob[:,:,eo]
-
-        locall = local_calc(P, F_local[ig], H, Ht, W[:,:,eo])
-
-        # Assemble into global vector
-        a_local[ig] .-= locall
-
-    end
-
-    return a_local
-
-end

@@ -4,34 +4,36 @@
 
 
     
-function assemble(P::parameters, iglob, M, W, x, y)
+function assemble!(NGLL, NelX, NelY, dxe, dye, ThickX, 
+                   ThickY, rho1, vs1, rho2, vs2, iglob, 
+                   M, W, x, y, jac)
 
 
-    xgll, wgll, H = GetGLL(P.NGLL)
+    xgll, wgll, H = GetGLL(NGLL)
     wgll2 = wgll*wgll';
 
-    rho::Matrix{Float64} = zeros(P.NGLL, P.NGLL)
-    mu::Matrix{Float64} = zeros(P.NGLL, P.NGLL)
+    rho::Matrix{Float64} = zeros(NGLL, NGLL)
+    mu::Matrix{Float64} = zeros(NGLL, NGLL)
     
-    vso = zeros(P.NGLL, P.NGLL)
-    vs = zeros(P.NGLL-1, P.NGLL)
-    dx = zeros(P.NGLL-1, P.NGLL)
+    vso = zeros(NGLL, NGLL)
+    vs = zeros(NGLL-1, NGLL)
+    dx = zeros(NGLL-1, NGLL)
     muMax = 0
     dt = Inf
 
-    for ey = 1:P.NelY
-        for ex = 1:P.NelX
+    @inbounds @fastmath for ey = 1:NelY
+        @inbounds @fastmath for ex = 1:NelX
 
-            eo = (ey-1)*P.NelX + ex
+            eo = (ey-1)*NelX + ex
             ig = iglob[:,:,eo]
 
             # Properties of heterogeneous medium
-            if ex*P.dxe >= P.ThickX && (P.dye <= ey*P.dye <= P.ThickY)
-                rho[:,:] .= P.rho2
-                mu[:,:] .= P.rho2*P.vs2^2
+            if ex*dxe >= ThickX && (dye <= ey*dye <= ThickY)
+                rho[:,:] .= rho2
+                mu[:,:] .= rho2*vs2^2
             else
-                rho[:,:] .= P.rho1
-                mu[:,:] .= P.rho1*P.vs1^2
+                rho[:,:] .= rho1
+                mu[:,:] .= rho1*vs1^2
             end
 
             if muMax < maximum(maximum(mu))
@@ -39,7 +41,7 @@ function assemble(P::parameters, iglob, M, W, x, y)
             end
 
             # Diagonal Mass Matrix
-            M[ig] .+= wgll2.*rho*P.jac
+            M[ig] .+= wgll2.*rho*jac
 
             # Local contributions to the stiffness matrix
             W[:,:,eo] .= wgll2.*mu;
@@ -47,12 +49,12 @@ function assemble(P::parameters, iglob, M, W, x, y)
             # Set timestep
             vso .= sqrt.(mu./rho)
             
-            if P.dxe<P.dye
-                vs .= max.(vso[1:P.NGLL-1,:], vso[2:P.NGLL,:])
-                dx .= repeat( diff(xgll)*0.5*P.dxe, 1, P.NGLL)
+            if dxe<dye
+                vs .= max.(vso[1:NGLL-1,:], vso[2:NGLL,:])
+                dx .= repeat( diff(xgll)*0.5*dxe, 1, NGLL)
             else
-                vs .= max.(vso[:,1:P.NGLL-1], vso[:,2:P.NGLL])'
-                dx .= repeat( diff(xgll)*0.5*P.dye, 1, P.NGLL)
+                vs .= max.(vso[:,1:NGLL-1], vso[:,2:NGLL])'
+                dx .= repeat( diff(xgll)*0.5*dye, 1, NGLL)
             end
             
             dtloc = dx./vs

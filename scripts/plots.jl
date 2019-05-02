@@ -4,32 +4,10 @@
 
 using PyPlot
 
-# Customize plot
-#PyPlot.matplotlib[:rc]("text", usetex = true)
-#PyPlot.matplotlib[:rc]("text.latex", preamble = "\\usepackage{amsmath}")
-PyPlot.matplotlib[:rc]("font", size = 24)
-PyPlot.matplotlib[:rc]("axes", labelsize = 21)
-PyPlot.matplotlib[:rc]("axes", titlesize = 21)
-#PyPlot.matplotlib[:rc]("xtick", labelsize = 12)
-#PyPlot.matplotlib[:rc]("ytick", labelsize = 12)
-PyPlot.matplotlib[:rc]("legend", fontsize = 24)
-PyPlot.matplotlib[:rc]("figure", titlesize = 24)
-#PyPlot.matplotlib[:rc]("figure", figsize = (6,4), dpi = 120)
-
-
-#  function 3DSliprates(S, SlipVel, time_)
-
-    #  # depth and time intervals
-    #  sdx = 10; sdt = 100
-
-    #  fig = PyPlot.figure(figsize=(6, 4.5), dpi=120)
-
-#  end
-
 # Plot friction parameters
 function fricPlot(cca, ccb, FltX)
     
-    fig = PyPlot.figure(figsize=(6,4.5), dpi = 120)
+    fig = PyPlot.figure()
     ax = fig[:add_subplot](111)
 
     ax[:plot](cca, FltX/1e3, "k--", label="a", lw = 1)
@@ -53,7 +31,7 @@ function stressPlot(Stress, time_, FltX, yr2sec, loc1 = 8e3)
     
     FltID = findall(abs.(FltX) .<= loc1)[1]
     
-    fig = PyPlot.figure(figsize=(6,4.5), dpi = 120)
+    fig = PyPlot.figure()
     ax = fig[:add_subplot](111)
 
     ax[:plot](time_/yr2sec, Stress[FltID, :], lw = 1)
@@ -73,7 +51,7 @@ function slipvelPlot(SlipVel, time_, FltX, yr2sec, loc1 = 8e3)
     
     FltID = findall(abs.(FltX) .<= loc1)[1]
 
-    fig = PyPlot.figure(figsize=(6,4.5), dpi = 120)
+    fig = PyPlot.figure()
     ax = fig[:add_subplot](111)
 
     ax[:plot](time_/yr2sec, SlipVel[FltID, :], lw = 1)
@@ -89,11 +67,11 @@ function slipvelPlot(SlipVel, time_, FltX, yr2sec, loc1 = 8e3)
 end
 
 # Plot Vfmax
-function VfmaxPlot(SlipVel, time_, yr2sec)
+function VfmaxPlot(Vfmax, time_, yr2sec)
 
-    Vfmax = maximum(SlipVel, dims = 1)[:]
+    #  Vfmax = maximum(SlipVel, dims = 1)[:]
     
-    fig = PyPlot.figure(figsize=(6,4.5), dpi = 120)
+    fig = PyPlot.figure()
     ax = fig[:add_subplot](111)
 
     ax[:plot](time_./yr2sec, Vfmax, lw = 1)
@@ -105,8 +83,8 @@ function VfmaxPlot(SlipVel, time_, yr2sec)
 
     figname = string(path, "Vfmax.pdf")
     fig[:savefig](figname, dpi = 300)
-    #  figname = string(dir, "/plots", name, "/Vfmax.pdf")
-    #  fig[:savefig](figname, dpi = 300)
+    figname = string(dir, "/plots", name, "/Vfmax.pdf")
+    fig[:savefig](figname, dpi = 300)
 end
 
 
@@ -119,8 +97,8 @@ function cumSlipPlot(delfsec, delf5yr, FltX)
 
     delfsec2 = delfsec[indx:end, :]
 
-    fig = PyPlot.figure(figsize=(12,8), dpi = 120)
-    ax = fig[:add_subplot](111)
+    fig = PyPlot.figure(figsize=(12,8))
+    ax = fig.add_subplot(111)
     
     # Shade the fault zone region
     x_shade = LinRange(5,25,25)
@@ -128,18 +106,20 @@ function cumSlipPlot(delfsec, delf5yr, FltX)
     y2 = repeat([FZ],25)
     y3 = repeat([-24],25)
 
-    ax[:plot](delf5yr, FltX/1e3, color="royalblue", lw=1, alpha=1.0)
-    ax[:plot](delfsec2, FltX[indx:end]/1e3, "--", color="chocolate", lw=1, alpha=1.0)
-    ax[:fill_between](x_shade, y2, y1, color="chocolate", alpha=0.3)
+    ax.plot(delf5yr, FltX/1e3, color="royalblue", lw=1, alpha=1.0)
+    ax.plot(delfsec2, FltX[indx:end]/1e3, "-", color="chocolate", lw=1, alpha=1.0)
+    #  ax[:fill_between](x_shade, y2, y1, color="chocolate", alpha=0.3)
     #  ax[:fill_between](x_shade, y3, y1, color="chocolate", alpha=0.3)
-    ax[:set_xlabel]("Accumulated Slip (m)")
-    ax[:set_ylabel]("Depth (km)")
-    ax[:set_title]("Cumulative Slip History")
-    ax[:set_ylim]([-24, 0])
-    ax[:set_xlim]([5,25])  #[0,maximum(delf5yr)])
+    ax.set_xlabel("Accumulated Slip (m)")
+    ax.set_ylabel("Depth (km)")
+    ax.set_title("Cumulative Slip History")
+    ax.set_ylim([-24, 0])
+    ax.set_xlim([1,15])  #[0,maximum(delf5yr)])
     show()
     
     figname = string(path, "cumslip.pdf")
-    fig[:savefig](figname, dpi = 300)
+    fig.savefig(figname, dpi = 300)
 
 end
+
+

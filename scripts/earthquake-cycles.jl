@@ -4,9 +4,9 @@
 #################################
 
 using StatsBase
-using PyPlot
+#  using PyPlot
 
-PyPlot.matplotlib[:rc]("patch.force_edgecolor=true")
+#  PyPlot.matplotlib[:rc]("patch.force_edgecolor=true")
 
 #-------------------------------
 # Compute hypocenter locations

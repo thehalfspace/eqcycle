@@ -1,2 +1,5 @@
 *.swp
+*.out
+*.pbs
+plots/*
 *.DS_Store
