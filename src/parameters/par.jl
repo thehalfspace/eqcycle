@@ -56,12 +56,12 @@ function setParameters(FZdepth, res)
     #...................
     
     # default
-    #  rho1::Float64 = 2670
-    #  vs1::Float64 = 3464
+    rho1::Float64 = 2670
+    vs1::Float64 = 3464
 
     # The entire medium has low rigidity
-    rho1::Float64 = 2500
-    vs1::Float64 = 0.6*3464
+    # rho1::Float64 = 2500
+    # vs1::Float64 = 0.6*3464
 
     rho2::Float64 = 2500
     vs2::Float64 = 0.6*vs1
@@ -80,7 +80,7 @@ function setParameters(FZdepth, res)
 
     fo::Vector{Float64} 	= repeat([0.6], FltNglob)		#	Reference friction coefficient
     Vo::Vector{Float64} 	= repeat([1e-6], FltNglob)		#	Reference velocity 'Vo'
-    xLf::Vector{Float64} = repeat([0.004], FltNglob)#	Dc (Lc) = 8 mm
+    xLf::Vector{Float64} = repeat([0.008], FltNglob)#	Dc (Lc) = 8 mm
 
     Vthres::Float64 = 0.001
     Vevne::Float64 = Vthres
