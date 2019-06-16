@@ -6,7 +6,7 @@
     
 function assemble!(NGLL, NelX, NelY, dxe, dye, ThickX, 
                    ThickY, rho1, vs1, rho2, vs2, iglob, 
-                   M, W, x, y, jac)
+                   M, x, y, jac)
 
 
     xgll, wgll, H = GetGLL(NGLL)
@@ -20,6 +20,9 @@ function assemble!(NGLL, NelX, NelY, dxe, dye, ThickX,
     dx = zeros(NGLL-1, NGLL)
     muMax = 0
     dt = Inf
+    
+    # damage zone index
+    damage_idx = zeros(NelX*NelY)
 
     @inbounds @fastmath for ey = 1:NelY
         @inbounds @fastmath for ex = 1:NelX
@@ -29,6 +32,7 @@ function assemble!(NGLL, NelX, NelY, dxe, dye, ThickX,
 
             # Properties of heterogeneous medium
             if ex*dxe >= ThickX && (dye <= ey*dye <= ThickY)
+                damage_idx[eo] = eo
                 rho[:,:] .= rho2
                 mu[:,:] .= rho2*vs2^2
             else
@@ -44,7 +48,7 @@ function assemble!(NGLL, NelX, NelY, dxe, dye, ThickX,
             M[ig] .+= wgll2.*rho*jac
 
             # Local contributions to the stiffness matrix
-            W[:,:,eo] .= wgll2.*mu;
+            #  W[:,:,eo] .= wgll2.*mu;
             
             # Set timestep
             vso .= sqrt.(mu./rho)
@@ -63,5 +67,5 @@ function assemble!(NGLL, NelX, NelY, dxe, dye, ThickX,
         end
     end
 
-    return M, W, dt, muMax
+    return M,dt, muMax, damage_idx[damage_idx .> 0.0]
 end

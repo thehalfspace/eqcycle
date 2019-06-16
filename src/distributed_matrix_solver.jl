@@ -43,9 +43,17 @@ function conj_grad(P, F)
     #  p = aspreconditioner(A)
     #  LinearAlgebra.mul!(a_local,A,dnew)
     #  Fnew = -a_local[P[4].FltNI]  # b 
-   
+    
+    # diagonal jacobi preconditioner
+    loc = collect(1:nglob)
+
+    prec = sparse(loc,loc,p)
+
+    #  return prec
+
     #  return A,Fnew
-    U = cg(A,F)
+    U = gmres(A,F, Pl=factorize(prec))
+    #  U = cg(A,F, Pl=qr(prec))
     return  U[FltNI]
 
 

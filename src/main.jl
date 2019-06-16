@@ -11,6 +11,7 @@
 #	and J.P. Ampuero's SEMLAB       	
 #
 #   CHANGELOG:
+#       * 06-15-2019: Assemble stiffness as sparse matrix
 #       * 04-20-2019: Implement multithreading for element calculations
 #       * 02-19-2019: Remove all the shared array stuff
 #       * 10-24-2018: Correct the free surface boundary condition
@@ -33,6 +34,7 @@
 #       * Add separate files for parameters, initial conditions, functions
 ###############################################################################
 
+#  include("$(@__DIR__)/damageEvol.jl")	    #	Set Parameters
 
 function main(P)
     
@@ -41,9 +43,17 @@ function main(P)
     # P[3] = float array
     # P[4] = integer array
     # P[5] = iglob
-    # P[6] = W
+    # P[6] = ksparse
     # P[7] = H
     # P[8] = Ht
+    # P[9] = damage_idx
+    
+    # damage evolution
+    #  damage_idx = P[9]
+
+
+    #  W_orig = W[:,:,damage_idx]
+    #  damage_amount::Float64 = 1.0
 
     #  wgll2::Array{Float64,2} = S.wgll*S.wgll';
     
@@ -84,8 +94,8 @@ function main(P)
     tauAB::Vector{Float64} = zeros(P[1].FltNglob)
     
     # Vectorized element calculations
-    a_elem::Array{Float64,3} = zeros(size(P[5])) 
-    Conn = sparse(P[5][:], collect(1:size(P[6][:])[1]),1)
+    #  a_elem::Array{Float64,3} = zeros(size(P[5])) 
+    #  Conn = sparse(P[5][:], collect(1:size(P[6][:])[1]),1)
 
 
     # Initial state variable
@@ -115,13 +125,25 @@ function main(P)
     dnew::Vector{Float64} = zeros(length(P[4].FltNI))
 
     # Preallocate variables with unknown size
-    output = results(zeros(P[1].FltNglob, 800000), zeros(P[1].FltNglob, 800000), 
-                     zeros(P[1].FltNglob, 800000), zeros(1000000), 
-                     zeros(P[1].FltNglob, 10000), zeros(P[1].FltNglob, 10000), 
-                     zeros(P[1].FltNglob, 10000),zeros(1000), zeros(10000), 
-                     zeros(P[1].FltNglob, 10000), zeros(P[1].FltNglob, 10000), 
-                     zeros(P[1].FltNglob, 10000), zeros(10000), zeros(10000000), 
-                     zeros(10000000))
+    #  seismic_stress, seismic_slipvel, seismic_slip
+    #  index_eq
+    #  is_stress, is_slipvel, is_slip
+    #  dSeis, vSeis, aSeis
+    #  tStart, tEnd
+    #  taubefore, tauafter, delfafter
+    #  hypo, time_, Vfmax
+    nseis = length(P[4].out_seis)
+    
+    output = results(zeros(P[1].FltNglob, 8000), zeros(P[1].FltNglob, 8000), 
+                     zeros(P[1].FltNglob, 8000), 
+                     zeros(10000), 
+                     zeros(P[1].FltNglob, 1000), zeros(P[1].FltNglob, 1000), 
+                     zeros(P[1].FltNglob, 1000),
+                     zeros(1000,nseis), zeros(1000,nseis), zeros(1000,nseis),
+                     zeros(1000), zeros(1000), 
+                     zeros(P[1].FltNglob, 1000), zeros(P[1].FltNglob, 10000), 
+                     zeros(P[1].FltNglob, 1000), zeros(10000), zeros(10000), 
+                     zeros(10000))
     
     # Save output variables at certain timesteps: define those timesteps
     tvsx::Float64 = 2*P[1].yr2sec  # 2 years for interseismic period
@@ -139,6 +161,7 @@ function main(P)
     slipstart::Int= 0
     idd::Int = 0
     it_s = 0; it_e = 0
+    rit = 0
 
     v = v[:] .- 0.5*P[2].Vpl
     Vf = 2*v[P[4].iFlt]
@@ -148,6 +171,15 @@ function main(P)
 
 
     v[P[4].FltIglobBC] .= 0.
+
+
+    # on fault and off fault stiffness
+    Ksparse = P[6]
+    kni = Ksparse[P[4].FltNI, P[4].FltNI]
+
+    # multigrid
+    ml = ruge_stuben(kni)
+    p = aspreconditioner(ml)
 
     #....................
     # Start of time loop
@@ -179,11 +211,15 @@ function main(P)
                 dnew .= d[P[4].FltNI]
 
                 
-                # Solve d = K^-1F by PCG
-                dnew = PCG!(P[2], P[1].Nel, P[3].diagKnew, dnew, F, P[4].iFlt, 
-                            P[4].FltNI,P[7], P[8], P[5], P[1].nglob, P[6], 
-                            a_elem, Conn)
-                #  dnew = conj_grad(P, F)
+                # Solve d = K^-1F by MGCG
+                rhs = (Ksparse*F)[P[4].FltNI]
+                
+                # direct inversion
+                #  dnew = -(kni\rhs)
+
+                # mgcg
+                dnew = cg!(dnew, -kni, rhs, Pl=p)
+
                 
                 # update displacement on the medium
                 d[P[4].FltNI] .= dnew
@@ -194,11 +230,8 @@ function main(P)
                 # Compute on-fault stress
                 a .= 0.
 
-                a_elem .= 0
-
                 # Compute forcing (acceleration) for each element
-                a_elem = element_computation!(P[2], P[5], d, P[7], P[8], P[6], P[1].Nel)
-                mul!(a, Conn, a_elem[:])[P[4].FltIglobBC] .= 0.
+                a = Ksparse*d
 
                 tau1 .= -a[P[4].iFlt]./P[3].FltB
                 
@@ -236,13 +269,9 @@ function main(P)
             # Prediction
             v .= v .+ half_dt.*a
             a .= 0.
-            
-            a_elem .= 0
 
             # Internal forces -K*d[t+1] stored in global array 'a'
-            # This is different from matlab code; will change if Nel_ETA is not zero
-            a_elem = element_computation!(P[2], P[5], d, P[7], P[8], P[6], P[1].Nel)
-           mul!(a, -Conn, a_elem[:])[P[4].FltIglobBC] .= 0.
+            a = -Ksparse*d
 
             # Absorbing boundaries
             a[P[4].iBcL] .= a[P[4].iBcL] .- P[3].BcLC.*v[P[4].iBcL]
@@ -283,7 +312,6 @@ function main(P)
         # Output variables at different depths for every timestep
         # Omitted the part of code from line 871 - 890, because I 
         # want to output only certain variables each timestep
-        # Doing it in separate script
         #----
 
 
@@ -305,6 +333,10 @@ function main(P)
             output.tauafter[:,it_e] = (tau + P[3].tauo)./1e6
             output.tEnd[it_e] = output.time_[it]
             slipstart = 0
+
+            # increase damage at the end of each earthquake by 5%
+            #  @info("Changing the amount of damage")
+
         end 
         #-----
         # Output the variables certain timesteps: 2yr interseismic, 1 sec dynamic
@@ -350,6 +382,15 @@ function main(P)
         if mod(it,500) == 0
             @printf("Time (yr) = %1.5g\n", t/P[1].yr2sec)
         end
+
+
+        # output variables at prescribed locations every 10 timesteps
+        if mod(it,10) == 0
+            rit += 1
+            output.dSeis[rit,:] = d[P[4].out_seis]
+            output.vSeis[rit,:] = v[P[4].out_seis]
+            output.aSeis[rit,:] = a[P[4].out_seis]
+        end
         
         # Determine quasi-static or dynamic regime based on max-slip velocity
         if isolver == 1 && Vfmax < 5e-3 || isolver == 2 && Vfmax < 2e-3
@@ -375,6 +416,9 @@ function main(P)
     output.is_stress        = output.is_stress[:,1:ntvsx]
     output.is_slipvel       = output.is_slipvel[:,1:ntvsx]
     output.is_slip          = output.is_slip[:,1:ntvsx]
+    output.dSeis            = output.dSeis[1:rit,:]
+    output.vSeis            = output.vSeis[1:rit,:]
+    output.aSeis            = output.aSeis[1:rit,:]
     output.tStart           = output.tStart[1:it_s]
     output.tEnd             = output.tEnd[1:it_e]
     output.taubefore        = output.taubefore[:,1:it_s]
@@ -396,6 +440,9 @@ mutable struct results
     is_stress::Matrix{Float64}
     is_slipvel::Matrix{Float64}
     is_slip::Matrix{Float64}
+    dSeis::Matrix{Float64}
+    vSeis::Matrix{Float64}
+    aSeis::Matrix{Float64}
     tStart::Vector{Float64}
     tEnd::Vector{Float64}
     taubefore::Matrix{Float64}

@@ -10,6 +10,9 @@ mutable struct results
     is_stress::Array{Float64,2}
     is_slipvel::Array{Float64,2}
     is_slip::Array{Float64,2}
+    dSeis::Matrix{Float64}
+    vSeis::Matrix{Float64}
+    aSeis::Matrix{Float64}
     tStart::Array{Float64}
     tEnd::Array{Float64}
     taubefore::Array{Float64,2}
@@ -81,4 +84,5 @@ struct params_iarray{T<:Array{Int}}
     iBcT::T
     FltIglobBC::T
     FltNI::T
+    out_seis::T
 end

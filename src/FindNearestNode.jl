@@ -2,11 +2,12 @@
 
 function FindNearestNode(xin, yin, X, Y)
     nseis = length(xin)
-    dist = zeros(nseis, 1)
-    iglob = zeros(Int, nseis, 1)
+    dist = zeros(nseis)
+    iglob::Vector{Int} = zeros(nseis)
 
     for k = 1:nseis
-        dist[k], iglob[k] = findmin( (X - xin[k]).^2 + (Y - yin[k]).^2 )
+        iglob[k] = argmin( (X .- xin[k]).^2 + (Y .- yin[k]).^2 )
+        dist[k] = minimum( (X .- xin[k]).^2 + (Y .- yin[k]).^2 )
     end
 
     dist = sqrt.(dist)

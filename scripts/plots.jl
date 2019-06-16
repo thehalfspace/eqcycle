@@ -114,7 +114,7 @@ function cumSlipPlot(delfsec, delf5yr, FltX)
     ax.set_ylabel("Depth (km)")
     ax.set_title("Cumulative Slip History")
     ax.set_ylim([-24, 0])
-    ax.set_xlim([1,15])  #[0,maximum(delf5yr)])
+    #  ax.set_xlim([1,15])  #[0,maximum(delf5yr)])
     show()
     
     figname = string(path, "cumslip.pdf")

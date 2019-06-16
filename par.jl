@@ -1,13 +1,14 @@
 #######################################################################
 #	PARAMETER FILE: SET THE PHYSICAL PARAMETERS FOR THE SIMULATION
 #######################################################################
-include("$(@__DIR__)/../GetGLL.jl")		    #	Polynomial interpolation
-include("$(@__DIR__)/../MeshBox2.jl")		    # 	Build 2D mesh
-include("$(@__DIR__)/../Assemble.jl")          #   Assemble mass and stiffness matrix
-#  include("$(@__DIR__)/trapezoidFZ/Assemble.jl")          #   Gaussian fault zone assemble
-include("$(@__DIR__)/../BoundaryMatrix2.jl")    #	Boundary matrices
-include("$(@__DIR__)/../FindNearestNode.jl")   #	Nearest node for output
-include("$(@__DIR__)/../initialConditions/defaultInitialConditions.jl")
+include("$(@__DIR__)/src/GetGLL.jl")		 #	Polynomial interpolation
+include("$(@__DIR__)/src/MeshBox.jl")		 # 	Build 2D mesh
+include("$(@__DIR__)/src/Assemble.jl")       #   Assemble mass and stiffness matrix
+include("$(@__DIR__)/src/Kassemble.jl")      #   Assemble mass and stiffness matrix
+#  include("$(@__DIR__)/trapezoidFZ/Assemble.jl") #   Gaussian fault zone assemble
+include("$(@__DIR__)/src/BoundaryMatrix.jl")    #	Boundary matrices
+include("$(@__DIR__)/src/FindNearestNode.jl")   #	Nearest node for output
+include("$(@__DIR__)/src/initialConditions/defaultInitialConditions.jl")
 
 
 function setParameters(FZdepth, res)
@@ -60,8 +61,8 @@ function setParameters(FZdepth, res)
     vs1::Float64 = 3464
 
     # The entire medium has low rigidity
-    # rho1::Float64 = 2500
-    # vs1::Float64 = 0.6*3464
+    #  rho1::Float64 = 2500
+    #  vs1::Float64 = 0.6*3464
 
     rho2::Float64 = 2500
     vs2::Float64 = 0.6*vs1
@@ -70,7 +71,7 @@ function setParameters(FZdepth, res)
 
     # Low velocity layer dimensions
     ThickX::Float64 = LX - ceil(FZdepth/dxe)*dxe # ~FZdepth m deep
-    ThickY::Float64 = 0*ceil(0.25e3/dye)*dye   # ~ 0.25*2 km wide
+    ThickY::Float64 = ceil(0.25e3/dye)*dye   # ~ 0.25*2 km wide
 
     #.......................
     # EARTHQUAKE PARAMETERS
@@ -78,13 +79,12 @@ function setParameters(FZdepth, res)
 
     Vpl::Float64 = 35e-3/yr2sec	#	Plate loading
 
-    fo::Vector{Float64} 	= repeat([0.6], FltNglob)		#	Reference friction coefficient
-    Vo::Vector{Float64} 	= repeat([1e-6], FltNglob)		#	Reference velocity 'Vo'
-    xLf::Vector{Float64} = repeat([0.008], FltNglob)#	Dc (Lc) = 8 mm
+    fo::Vector{Float64} = repeat([0.6], FltNglob) #	Reference friction coefficient
+    Vo::Vector{Float64} = repeat([1e-6], FltNglob)		#	Reference velocity 'Vo'
+    xLf::Vector{Float64} = repeat([0.008], FltNglob)    #	Dc (Lc) = 8 mm
 
     Vthres::Float64 = 0.001
     Vevne::Float64 = Vthres
-
 
     #-----------#
     #-----------#
@@ -103,26 +103,44 @@ function setParameters(FZdepth, res)
     # The derivatives of the Lagrange Polynomials were pre-tabulated 
     # xgll = location of the GLL nodes inside the reference segment [-1,1]
     xgll::Vector{Float64}, wgll::Vector{Float64}, H::Matrix{Float64} = GetGLL(NGLL)
-    Ht::Matrix{Float64} = H'
-    wgll2::Matrix{Float64} = wgll*wgll'
+    wgll2::SMatrix{NGLL,NGLL,Float64} = wgll*wgll'
 
+    #.............................
+    #   OUTPUT RECEIVER LOCATIONS
+    #.............................
+    # For now, it saves slip, sliprate, and stress at the nearest node specified.
+    # My coordinates are weird, might change them later.
+    # x coordinate = along dip fault length (always -ve below the free surface)
+    # y coordinate = off-fault distance (+ve)
+     
+
+    x_out = [6.0, 6.0, 6.0, 6.0, 6.0, 6.0].*(-1e3)  # x coordinate of receiver
+    y_out = [66.0, 130.0, 198.0, 250.0, 330.0, 396.0]     # y coordinate of receiver
+    #  n_receiver = length(x_receiver) # number of receivers
+
+    x_out, y_out, out_seis, dist = FindNearestNode(x_out, y_out, x, y) 
+    
+    
     #.................
     # Initialization
     #.................
 
     # For internal forces
-    W::Array{Float64,3} = zeros(NGLL, NGLL, Nel)
+    #  W::Array{Float64,3} = zeros(NGLL, NGLL, Nel)
 
     # Global Mass Matrix
     M::Vector{Float64} = zeros(nglob)
 
     # Mass+Damping matrix
-    MC::Vector{Float64} = zeros(nglob)
+    #  MC::Vector{Float64} = zeros(nglob)
 
     # Assemble mass and stiffness matrix
-    M, W, dt::Float64, muMax = assemble!(NGLL, NelX, NelY, dxe, dye, ThickX,
-                                ThickY, rho1, vs1, rho2, vs2, iglob, 
-                                M, W, x, y, jac)
+    M, dt::Float64, muMax, damage_idx = assemble!(NGLL, NelX, NelY, dxe, dye, 
+                        ThickX,ThickY, rho1, vs1, rho2, vs2, iglob,M, x, y, jac)
+
+    # Stiffness Assembly
+    Ksparse::SparseMatrixCSC{Float64} = stiffness_assembly(NGLL, NelX, NelY, 
+                    nglob, dxe, dye, ThickX, ThickY, rho1, vs1, rho2, vs2, iglob)
     
     # Time solver variables
     dt = CFL*dt
@@ -182,7 +200,7 @@ function setParameters(FZdepth, res)
     FltNI::Vector{Int} = deleteat!(collect(1:nglob), iFlt)
     
     # Compute diagonal of K
-    diagKnew::Vector{Float64} = KdiagFunc!(FltNglob, NelY, NGLL, Nel, coefint1, coefint2, iglob, W, H, Ht, FltNI)
+    #  diagKnew::Vector{Float64} = KdiagFunc!(FltNglob, NelY, NGLL, Nel, coefint1, coefint2, iglob, W, H, Ht, FltNI)
     
     # Fault boundary: indices where fault within 24 km
     fbc = reshape(iglob[:,1,:], length(iglob[:,1,:])) 
@@ -197,8 +215,9 @@ function setParameters(FZdepth, res)
 
     return params_int(Nel, FltNglob, yr2sec, Total_time, IDstate, nglob),
             params_float(jac, coefint1, coefint2, ETA, Vpl, Vthres, Vevne, dt),
-            params_farray(fo, Vo, xLf, M, BcLC, BcTC, FltB, FltZ, FltX, cca, ccb, Seff, tauo, XiLf, diagKnew),
-            params_iarray(iFlt, iBcL, iBcT, FltIglobBC, FltNI),iglob, W, H, Ht
+            params_farray(fo, Vo, xLf, M, BcLC, BcTC, FltB, FltZ, FltX, cca, ccb, Seff, tauo, XiLf, x_out, y_out),
+            params_iarray(iFlt, iBcL, iBcT, FltIglobBC, FltNI, out_seis),
+            iglob, Ksparse, damage_idx
 
 end
 
@@ -256,7 +275,10 @@ struct params_farray{T<:Vector{Float64}}
     tauo::T
 
     XiLf::T
-    diagKnew::T
+    #  diagKnew::T
+
+    xout::T
+    yout::T
 end
 
 struct params_iarray{T<:Vector{Int}}
@@ -265,6 +287,7 @@ struct params_iarray{T<:Vector{Int}}
     iBcT::T
     FltIglobBC::T
     FltNI::T
+    out_seis::T
 end
 
 # Calculate XiLf used in computing the timestep

@@ -1,46 +1,13 @@
-function element_computation!(P::params_float, iglob::Array{Int,3}, F_local::Array{Float64}, H::Array{Float64,2}, Ht::Array{Float64,2}, W::Array{Float64,3}, Nel)
-    a_elem = zeros(size(iglob))
-        for eo in 1:Nel
-            ig = iglob[:,:,eo]
-            Wlocal = W[:,:,eo]
-            locall = F_local[ig]
-            a_elem[:,:,eo] =  P.coefint1*H*(Wlocal.*(Ht*locall)) + P.coefint2*(Wlocal.*(locall*H))*Ht
-        end
-    return a_elem
-end
-
-# Assemble K matrix as local parts [Nel,ngll,ngll]
-function Kassemble(Nel, iglob, P, W, H, Ht)
-    a_elem = zeros(size(iglob))
-        for eo in 1:Nel
-            Wlocal = W[:,:,eo]
-            a_elem[:,:,eo] =  P.coefint1*H*(Wlocal.*Ht) + P.coefint2*(Wlocal.*H)*Ht
-        end
-    return a_elem
-end
-
-function kass2(kloc, iglob,nglob, nel)
-    kglob = zeros(nglob, nglob)
-
-    for e in 1:nel
-        ig = iglob[:,:,e]
-        kglob[ig[:],ig[:]] += repeat(kloc[ig][:],1,9)
-    end
-
-    kglob
-end
-
-#a_elem[:,:,eo] =  P.coefint1*H*(Wlocal.*(Ht*locall)) + P.coefint2*(Wlocal.*(locall*H))*Ht
-
 W = P[6]
 P2 = P[2];
 iglob = P[5];
-H = P[7]
-Ht = P[8]
+ksparse = P[7];
+H = P[8]
+Ht = P[9]
 Nel = P[1].Nel
 nglob = P[1].nglob
 
-ngll = 5
+ngll = size(H)[1]
 
     #  wgll2::Array{Float64,2} = S.wgll*S.wgll';
     
@@ -110,15 +77,19 @@ ngll = 5
     dd = zeros(P[1].nglob)
     dacum = zeros(P[1].nglob)
     dnew = zeros(length(P[4].FltNI))
+    nseis = length(P[4].out_seis)
 
     # Preallocate variables with unknown size
-    output = results(zeros(P[1].FltNglob, 800000), zeros(P[1].FltNglob, 800000), 
-                     zeros(P[1].FltNglob, 800000), zeros(1000000), 
-                     zeros(P[1].FltNglob, 10000), zeros(P[1].FltNglob, 10000), 
-                     zeros(P[1].FltNglob, 10000),zeros(1000), zeros(10000), 
-                     zeros(P[1].FltNglob, 10000), zeros(P[1].FltNglob, 10000), 
-                     zeros(P[1].FltNglob, 10000), zeros(10000), zeros(10000000), 
-                     zeros(10000000))
+    output = results(zeros(P[1].FltNglob, 8000), zeros(P[1].FltNglob, 8000), 
+                     zeros(P[1].FltNglob, 8000), 
+                     zeros(10000), 
+                     zeros(P[1].FltNglob, 1000), zeros(P[1].FltNglob, 1000), 
+                     zeros(P[1].FltNglob, 1000),
+                     zeros(1000,nseis), zeros(1000,nseis), zeros(1000,nseis),
+                     zeros(1000), zeros(1000), 
+                     zeros(P[1].FltNglob, 1000), zeros(P[1].FltNglob, 10000), 
+                     zeros(P[1].FltNglob, 1000), zeros(10000), zeros(10000), 
+                     zeros(10000))
     
     # Save output variables at certain timesteps: define those timesteps
     tvsx = 2*P[1].yr2sec  # 2 years for interseismic period
@@ -146,6 +117,9 @@ ngll = 5
 
     v[P[4].FltIglobBC] .= 0.
 
+    # on fault and off fault stiffness
+    Ksparse = P[7]
+    kni = Ksparse[P[4].FltNI, P[4].FltNI]
     #....................
     # Start of time loop
     #....................
@@ -170,24 +144,27 @@ ngll = 5
                 
                 # Compute the on-Fault displacement
                 F .= 0.
-                @inbounds @fastmath F[P[4].iFlt] .= dPre[P[4].iFlt] .+ v[P[4].iFlt]*dt
+                F[P[4].iFlt] .= dPre[P[4].iFlt] .+ v[P[4].iFlt]*dt
 
                 # Assign previous displacement field as initial guess
                 dnew .= d[P[4].FltNI]
                 
+                # multigrid
+                rhs = (Ksparse*F)[P[4].FltNI]
+                
                 # Solve d = K^-1F by PCG
-                dnew = PCG!(P[2], P[1].Nel, P[3].diagKnew, dnew, F, P[4].iFlt, 
-                            P[4].FltNI,P[7], P[8], P[5], P[1].nglob, P[6], 
-                            a_elem, Conn)#, a_local, dd_local, p_local)
+                #  dnew = PCG!(P[2], P[1].Nel, P[3].diagKnew, dnew, F, P[4].iFlt, 
+                            #  P[4].FltNI,P[8], P[9], P[5], P[1].nglob, P[6], 
+                            #  a_elem, Conn)
                 
                 # update displacement on the medium
-                d[P[4].FltNI] .= dnew
+                #  d[P[4].FltNI] .= dnew
 
                 #  # make d = F on the fault
-                @inbounds @fastmath d[P[4].iFlt] .= F[P[4].iFlt]
+                #  @inbounds @fastmath d[P[4].iFlt] .= F[P[4].iFlt]
 
                 #  # Compute on-fault stress
-                a .= 0.
+                #  a .= 0.
 
                 #  # Compute forcing (acceleration) for each element
 
