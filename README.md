@@ -1,6 +1,6 @@
 ## Spectral element method for earthquake cycle simulations with dynamic treatment of inertial effects.
 
-# Changelog:
+### Changelog:
 - Using FEMSparse to assemble stiffness matrix fast.
 - Implemented [algebraic multigrid](https://github.com/JuliaLinearAlgebra/AlgebraicMultigrid.jl) conjugate gradient for the quasi-static solver.
 - Implemented multithreading parallelism
@@ -8,7 +8,7 @@
 Development phase: 
  working on better algorithms and parallelization.
 
-# To do:
+### To do:
 - Switch large global arrays with CUArrays for CUDA (GPU) implementation.
 - Annotate the code
 
