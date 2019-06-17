@@ -385,7 +385,7 @@ function main(P)
 
 
         # output variables at prescribed locations every 10 timesteps
-        if mod(it,10) == 0
+        if mod(it,10000) == 0
             rit += 1
             output.dSeis[rit,:] = d[P[4].out_seis]
             output.vSeis[rit,:] = v[P[4].out_seis]
