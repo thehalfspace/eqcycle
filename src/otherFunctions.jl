@@ -63,7 +63,7 @@ function slrFunc!(P::params_farray, NFBC::Int, FltNglob::Int, psi::Array{Float64
         len = div(length(NFBC:FltNglob), nthreads())
         domain = ((tid-1)*len + NFBC):(tid*len + NFBC - 1)
 
-        @inbounds @simd for j in domain
+        @inbounds for j in domain
             psi1[j] = IDS!(P.xLf[j], P.Vo[j], psi[j], dt, Vf[j], 1e-6, IDstate)
             Vf1[j] = P.Vo[j]*(exp(-(P.fo[j] + P.ccb[j]*psi1[j])/P.cca[j] + 
                                   (tau1[j] + P.tauo[j])/(P.Seff[j]*P.cca[j])) 

@@ -10,7 +10,7 @@ function FBC!(IDstate::Int, P::params_farray, NFBC::Int, FltNglob::Int, psi1::Ar
             len = div(length(NFBC:FltNglob), nthreads())
             domain = ((tid-1)*len + NFBC):(tid*len + NFBC - 1)
 
-            @inbounds @simd for j in domain
+            @inbounds for j in domain
 
                 psi1[j] = IDS!(P.xLf[j], P.Vo[j], psi[j], dt, Vf[j], 1e-5, IDstate)
                 Vf1[j], tau1[j] = NRsearch!(P.fo[j], P.Vo[j], P.cca[j], P.ccb[j], P.Seff[j], 0. , P.tauo[j], psi1[j], P.FltZ[j], FltVfree[j])
