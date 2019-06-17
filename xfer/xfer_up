@@ -1,3 +1,0 @@
-#!/bin/bash
-
-scp $1 flux-xfer.arc-ts.umich.edu:

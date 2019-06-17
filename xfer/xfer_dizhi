@@ -1,3 +1,0 @@
-#!/bin/bash
-
-scp prith@dizhi.earth.lsa.umich.edu:/opt/home/prith/Desktop/JuliaSEM/output/$1 /Users/prith/JuliaSEM/output/dizhi_sims/
