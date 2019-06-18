@@ -24,7 +24,7 @@ println(nthreads())
 
 include("$(@__DIR__)/par.jl")	    #	Set Parameters
 
-P = setParameters(0e3,16)      # args = fault zone depth, resolution
+P = setParameters(24e3,16)      # args = fault zone depth, resolution
 
 include("$(@__DIR__)/src/dtevol.jl")          
 include("$(@__DIR__)/src/NRsearch.jl")
@@ -38,7 +38,7 @@ simulation_time = @elapsed O = @time main(P)
 
 # Save output to file
 using Serialization
-open("$(@__DIR__)/data/ttestt01.out", "w") do f
+open("$(@__DIR__)/data/deep_dc4.out", "w") do f
     serialize(f,O)
     serialize(f, simulation_time)
     serialize(f, P)
