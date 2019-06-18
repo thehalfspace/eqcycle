@@ -134,22 +134,22 @@ function main(P)
     #  hypo, time_, Vfmax
     nseis = length(P[4].out_seis)
     
-    output = results(zeros(P[1].FltNglob, 80000), zeros(P[1].FltNglob, 80000), 
-                     zeros(P[1].FltNglob, 80000), 
-                     zeros(50000), 
-                     zeros(P[1].FltNglob, 5000), zeros(P[1].FltNglob, 5000), 
-                     zeros(P[1].FltNglob, 5000),
-                     zeros(50000,nseis), zeros(50000,nseis), zeros(50000,nseis),
-                     zeros(1000), zeros(1000), 
-                     zeros(P[1].FltNglob, 1000), zeros(P[1].FltNglob, 1000), 
-                     zeros(P[1].FltNglob, 1000), zeros(1000), zeros(500000), 
+    output = results(zeros(P[1].FltNglob, 150000), zeros(P[1].FltNglob, 150000), 
+                     zeros(P[1].FltNglob, 150000), 
+                     zeros(200000), 
+                     zeros(P[1].FltNglob, 2000), zeros(P[1].FltNglob, 2000), 
+                     zeros(P[1].FltNglob, 2000),
+                     zeros(100000,nseis), zeros(100000,nseis), zeros(100000,nseis),
+                     zeros(400), zeros(400), 
+                     zeros(P[1].FltNglob, 400), zeros(P[1].FltNglob, 400), 
+                     zeros(P[1].FltNglob, 400), zeros(400), zeros(500000), 
                      zeros(500000))
     
     # Save output variables at certain timesteps: define those timesteps
     tvsx::Float64 = 2*P[1].yr2sec  # 2 years for interseismic period
     tvsxinc::Float64 = tvsx
 
-    tevneinc::Int64 = 8    # 5 second for seismic period
+    tevneinc::Int64 = 5    # 5 second for seismic period
     delfref = zeros(P[1].FltNglob)
 
     # Iterators
