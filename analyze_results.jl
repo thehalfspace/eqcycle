@@ -13,7 +13,7 @@ global path = "/Users/prith/jsem2/plots/test01/"
 
 # Deserialize the output
 using Serialization
-open("data/testt01.out") do f
+open("data/test01.out") do f
     global O, sim_time, P, S
     O = deserialize(f)
     sim_time = deserialize(f)

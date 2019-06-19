@@ -36,6 +36,34 @@
 
 #  include("$(@__DIR__)/damageEvol.jl")	    #	Set Parameters
 
+# Threaded matrix multiplication
+import Base: eltype, size
+#  import LinearAlgebra: A_mul_B!
+using Base.Threads
+
+struct ThreadedMul{Tv,Ti}
+        A::SparseMatrixCSC{Tv,Ti}
+end
+
+function LinearAlgebra.mul!(y::AbstractVector, M::ThreadedMul, x::AbstractVector)
+    @threads for i = 1 : M.A.n
+         _threaded_mul!(y, M.A, x, i)
+    end
+     y
+end
+
+@inline function _threaded_mul!(y, A::SparseMatrixCSC{Tv}, x, i) where {Tv}
+    s = zero(Tv)
+    @inbounds for j = A.colptr[i] : A.colptr[i + 1] - 1
+        s += A.nzval[j] * x[A.rowval[j]]
+    end
+    
+    @inbounds y[i] = s
+    y
+end
+eltype(M::ThreadedMul) = eltype(M.A)
+size(M::ThreadedMul, I...) = size(M.A, I...)
+
 function main(P)
     
     # P[1] = integer
@@ -172,14 +200,21 @@ function main(P)
 
     v[P[4].FltIglobBC] .= 0.
 
-
     # on fault and off fault stiffness
     Ksparse = P[6]
-    kni = Ksparse[P[4].FltNI, P[4].FltNI]
+    kni = -Ksparse[P[4].FltNI, P[4].FltNI]
+
+    nKsparse = -Ksparse
 
     # multigrid
     ml = ruge_stuben(kni)
     p = aspreconditioner(ml)
+    tmp = copy(a)
+    
+    Ksparse = ThreadedMul(Ksparse)
+    nKsparse = ThreadedMul(nKsparse)
+    kni = ThreadedMul(kni)
+
 
     #....................
     # Start of time loop
@@ -212,13 +247,14 @@ function main(P)
 
                 
                 # Solve d = K^-1F by MGCG
-                rhs = (Ksparse*F)[P[4].FltNI]
+                rhs = (mul!(tmp,Ksparse,F))[P[4].FltNI]
+                #  rhs = (Ksparse*F)[P[4].FltNI]
                 
                 # direct inversion
                 #  dnew = -(kni\rhs)
 
                 # mgcg
-                dnew = cg!(dnew, -kni, rhs, Pl=p)
+                dnew = cg!(dnew, kni, rhs, Pl=p)
 
                 
                 # update displacement on the medium
@@ -231,7 +267,8 @@ function main(P)
                 a .= 0.
 
                 # Compute forcing (acceleration) for each element
-                a = Ksparse*d
+                mul!(a,Ksparse,d)
+                #  a = Ksparse*d
 
                 tau1 .= -a[P[4].iFlt]./P[3].FltB
                 
@@ -271,7 +308,8 @@ function main(P)
             a .= 0.
 
             # Internal forces -K*d[t+1] stored in global array 'a'
-            a = -Ksparse*d
+            mul!(a,nKsparse,d)
+            #  a = nKsparse*d
 
             # Absorbing boundaries
             a[P[4].iBcL] .= a[P[4].iBcL] .- P[3].BcLC.*v[P[4].iBcL]
@@ -452,4 +490,5 @@ mutable struct results
     time_::Vector{Float64}
     Vfmax::Vector{Float64}
 end
+
 
