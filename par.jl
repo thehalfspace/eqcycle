@@ -81,7 +81,7 @@ function setParameters(FZdepth, res)
 
     fo::Vector{Float64} = repeat([0.6], FltNglob) #	Reference friction coefficient
     Vo::Vector{Float64} = repeat([1e-6], FltNglob)		#	Reference velocity 'Vo'
-    xLf::Vector{Float64} = repeat([0.004], FltNglob)    #	Dc (Lc) = 8 mm
+    xLf::Vector{Float64} = repeat([0.008], FltNglob)    #	Dc (Lc) = 8 mm
 
     Vthres::Float64 = 0.001
     Vevne::Float64 = Vthres
@@ -217,7 +217,7 @@ function setParameters(FZdepth, res)
             params_float(jac, coefint1, coefint2, ETA, Vpl, Vthres, Vevne, dt),
             params_farray(fo, Vo, xLf, M, BcLC, BcTC, FltB, FltZ, FltX, cca, ccb, Seff, tauo, XiLf, x_out, y_out),
             params_iarray(iFlt, iBcL, iBcT, FltIglobBC, FltNI, out_seis),
-            iglob, Ksparse, damage_idx
+            iglob, Ksparse
 
 end
 

@@ -161,7 +161,9 @@ size(M::ThreadedMul, I...) = size(M.A, I...)
 
     # on fault and off fault stiffness
     Ksparse = P[6]
+    #  Ks2 = P[7]
     kni = -Ksparse[P[4].FltNI, P[4].FltNI]
+    #  kni2 = -Ks2[P[4].FltNI, P[4].FltNI]
 
     nKsparse = -Ksparse
 
@@ -216,3 +218,16 @@ size(M::ThreadedMul, I...) = size(M.A, I...)
 
                 
                 # update displacement on the medium
+                d[P[4].FltNI] .= dnew
+
+                # make d = F on the fault
+                d[P[4].iFlt] .= F[P[4].iFlt]
+
+                # Compute on-fault stress
+                a .= 0.
+
+                # Compute forcing (acceleration) for each element
+                mul!(a,Ksparse,d)
+                #  a = Ksparse*d
+
+                tau1 .= -a[P[4].iFlt]./P[3].FltB

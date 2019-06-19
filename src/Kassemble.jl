@@ -6,24 +6,31 @@ function stiffness_assembly(NGLL, NelX, NelY, nglob, dxe, dye, ThickX, ThickY,
     xgll, wgll, H::SMatrix{NGLL,NGLL,Float64} = GetGLL(NGLL)
     wgll2::SMatrix{NGLL,NGLL,Float64} = wgll*wgll'
 
-    K = SparseMatrixCOO()
     
     ig::Matrix{Int64} = zeros(NGLL,NGLL)  # iterator
 
     W = material_properties(NelX, NelY,NGLL,dxe, dye, ThickX, ThickY, wgll2, rho1, rho2, vs1, vs2)
     Ke = K_element(W, dxe, dye, NGLL, H, NelX*NelY)
-    #  Ksparse = assembley(Ke, iglob, NelX*NelY, nglob)
+    #  Ks22 = assembley(Ke, iglob, NelX*NelY, nglob)
+    K = FEsparse(NelX*NelY, Ke, iglob)
 
+
+    return dropzeros!(K)
+end
+
+function FEsparse(Nel, Ke, iglob)
+    K = SparseMatrixCOO()
     # using FEMSparse
-    for eo in 1:NelX*NelY
+    for eo in 1:Nel
         FEMSparse.assemble_local_matrix!(K, vec(iglob[:,:,eo]),
                                          vec(iglob[:,:,eo]), Ke[:,:,eo])
     end
 
-    return SparseMatrixCSC(K)
+    SparseMatrixCSC(K)
 end
 
-#  function assembley(Ke, iglob, Nel, nglob)
+# My naive approach
+#  function assembley_2(Ke, iglob, Nel, nglob)
     #  Ksparse::SparseMatrixCSC{Float64} = spzeros(nglob,nglob) 
     #  for eo in 1:Nel
         #  ig = iglob[:,:,eo]
@@ -31,6 +38,32 @@ end
     #  end
 
     #  Ksparse
+#  end
+
+
+# faster assembly apprach: just as fast as FESparse
+#  function assembley(Ke, iglob, Nel, nglob)
+    #  #  Ksparse::SparseMatrixCSC{Float64} = spzeros(nglob,nglob) 
+    #  I = Vector{Int}(undef, length(Ke))
+    #  J = Vector{Int}(undef, length(Ke))
+    #  V = Vector{Float64}(undef, length(Ke))
+    #  ct = 1
+
+    #  for eo in 1:Nel
+        #  v = view(iglob,:,:,eo)
+        #  #  v = iglob[:,:,eo][:]
+        #  for j in 1:length(v)
+            #  for i in 1:length(v)
+                #  I[ct] = v[i]
+                #  J[ct] = v[j]
+                #  V[ct] = Ke[i, j, eo]
+                #  ct += 1
+                #  #  Ksparse[vec(ig),vec(ig)] += Ke[:,:,eo]
+            #  end
+        #  end
+    #  end
+
+    #  return sparse(I,J,V,nglob,nglob,+)
 #  end
 
 
