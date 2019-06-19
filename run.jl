@@ -32,7 +32,7 @@ include("$(@__DIR__)/src/otherFunctions.jl")
 
 include("$(@__DIR__)/src/main.jl")
 
-#  simulation_time = @elapsed O = @time main(P)
+simulation_time = @elapsed O = @time main(P)
 
 #  description = "homogeneous medium with high resolution"
 
