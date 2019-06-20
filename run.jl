@@ -19,13 +19,13 @@ using AlgebraicMultigrid
 using StaticArrays
 using IterativeSolvers
 using FEMSparse
-using CuthillMcKee
+#  using CuthillMcKee
 using Base.Threads
 println(nthreads())
 
 include("$(@__DIR__)/par.jl")	    #	Set Parameters
 
-P = setParameters(0e3,1)      # args = fault zone depth, resolution
+P = setParameters(0e3,2)      # args = fault zone depth, resolution
 
 include("$(@__DIR__)/src/dtevol.jl")          
 include("$(@__DIR__)/src/NRsearch.jl")
@@ -33,7 +33,7 @@ include("$(@__DIR__)/src/otherFunctions.jl")
 
 include("$(@__DIR__)/src/main.jl")
 
-#  simulation_time = @elapsed O = @time main(P)
+simulation_time = @elapsed O = @time main(P)
 
 #  description = "homogeneous medium with high resolution"
 
