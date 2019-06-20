@@ -271,14 +271,12 @@ function main(P)
 
                 # Compute on-fault stress
                 a .= 0.
-
-                # Compute forcing (acceleration) for each element
                 #  mul!(a,Ksparse,d)
                 a = Ksparse*d
 
                 tau1 .= -a[P[4].iFlt]./P[3].FltB
                 
-                # Function to calculate sliprate
+                # Function to calculate on-fault sliprate
                 psi1, Vf1 = slrFunc!(P[3], NFBC, P[1].FltNglob, psi, psi1, Vf, Vf1, P[1].IDstate, tau1, dt)
 
                 Vf1[iFBC] .= P[2].Vpl
