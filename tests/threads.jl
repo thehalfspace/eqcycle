@@ -231,3 +231,10 @@ size(M::ThreadedMul, I...) = size(M.A, I...)
                 #  a = Ksparse*d
 
                 tau1 .= -a[P[4].iFlt]./P[3].FltB
+                
+                # Function to calculate sliprate
+                psi1, Vf1 = slrFunc!(P[3], NFBC, P[1].FltNglob, psi, psi1, Vf, Vf1, P[1].IDstate, tau1, dt)
+
+                Vf1[iFBC] .= P[2].Vpl
+                Vf .= (Vf0 + Vf1)/2
+                v[P[4].iFlt] .= 0.5*(Vf .- P[2].Vpl)

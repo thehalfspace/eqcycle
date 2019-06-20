@@ -16,6 +16,7 @@ function stiffness_assembly(NGLL, NelX, NelY, nglob, dxe, dye, ThickX, ThickY,
 
 
     return dropzeros!(K)
+    #  return rcmpermute(dropzeros!(K))
 end
 
 function FEsparse(Nel, Ke, iglob)

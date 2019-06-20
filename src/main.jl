@@ -202,6 +202,7 @@ function main(P)
 
     # on fault and off fault stiffness
     Ksparse = P[6]
+    #  Ksparse = rcmpermute(P[6])
     kni = -Ksparse[P[4].FltNI, P[4].FltNI]
 
     nKsparse = -Ksparse
