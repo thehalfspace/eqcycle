@@ -70,7 +70,7 @@ function main(P)
     # P[2] = float
     # P[3] = float array
     # P[4] = integer array
-    # P[5] = iglob
+    # P[5] = Ksparse
     # P[6] = ksparse
     # P[7] = H
     # P[8] = Ht
@@ -177,7 +177,7 @@ function main(P)
     tvsx::Float64 = 2*P[1].yr2sec  # 2 years for interseismic period
     tvsxinc::Float64 = tvsx
 
-    tevneinc::Int64 = 5    # 5 second for seismic period
+    tevneinc::Int64 = 8    # 8 second for seismic period
     delfref = zeros(P[1].FltNglob)
 
     # Iterators
@@ -201,8 +201,8 @@ function main(P)
     v[P[4].FltIglobBC] .= 0.
 
     # on fault and off fault stiffness
-    Ksparse = P[6]
-    #  Ksparse = rcmpermute(P[6])
+    Ksparse = P[5]
+    #  Ksparse = rcmpermute(P[5])
     kni = -Ksparse[P[4].FltNI, P[4].FltNI]
 
     nKsparse = -Ksparse
@@ -210,7 +210,7 @@ function main(P)
     # multigrid
     ml = ruge_stuben(kni)
     p = aspreconditioner(ml)
-    tmp = copy(a)
+    #  tmp = copy(a)
     
     #  Ksparse = ThreadedMul(Ksparse)
     #  nKsparse = ThreadedMul(nKsparse)
@@ -253,8 +253,8 @@ function main(P)
 
                 
                 # Solve d = K^-1F by MGCG
-                rhs = (mul!(tmp,Ksparse,F))[P[4].FltNI]
-                #  rhs = (Ksparse*F)[P[4].FltNI]
+                #  rhs = (mul!(tmp,Ksparse,F))[P[4].FltNI]
+                rhs = (Ksparse*F)[P[4].FltNI]
                 
                 # direct inversion
                 #  dnew = -(kni\rhs)
@@ -273,8 +273,8 @@ function main(P)
                 a .= 0.
 
                 # Compute forcing (acceleration) for each element
-                mul!(a,Ksparse,d)
-                #  a = Ksparse*d
+                #  mul!(a,Ksparse,d)
+                a = Ksparse*d
 
                 tau1 .= -a[P[4].iFlt]./P[3].FltB
                 
@@ -314,8 +314,8 @@ function main(P)
             a .= 0.
 
             # Internal forces -K*d[t+1] stored in global array 'a'
-            mul!(a,nKsparse,d)
-            #  a = nKsparse*d
+            #  mul!(a,nKsparse,d)
+            a = nKsparse*d
 
             # Absorbing boundaries
             a[P[4].iBcL] .= a[P[4].iBcL] .- P[3].BcLC.*v[P[4].iBcL]

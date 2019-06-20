@@ -1,15 +1,13 @@
 # Assembly of global stiffness matrix as a sparse matrix
 
-
-function stiffness_assembly(NGLL, NelX, NelY, nglob, dxe, dye, ThickX, ThickY, 
-                            rho1, vs1, rho2, vs2, iglob) 
+function stiffness_assembly(NGLL, NelX, NelY, dxe,dye, nglob, iglob, W) 
     xgll, wgll, H::SMatrix{NGLL,NGLL,Float64} = GetGLL(NGLL)
     wgll2::SMatrix{NGLL,NGLL,Float64} = wgll*wgll'
 
     
     ig::Matrix{Int64} = zeros(NGLL,NGLL)  # iterator
 
-    W = material_properties(NelX, NelY,NGLL,dxe, dye, ThickX, ThickY, wgll2, rho1, rho2, vs1, vs2)
+    #  W = material_properties(NelX, NelY,NGLL,dxe, dye, ThickX, ThickY, wgll2, rho1, rho2, vs1, vs2)
     Ke = K_element(W, dxe, dye, NGLL, H, NelX*NelY)
     #  Ks22 = assembley(Ke, iglob, NelX*NelY, nglob)
     K = FEsparse(NelX*NelY, Ke, iglob)
@@ -66,27 +64,6 @@ end
 
     #  return sparse(I,J,V,nglob,nglob,+)
 #  end
-
-
-function material_properties(NelX, NelY,NGLL, dxe, dye, ThickX, ThickY, wgll2, rho1, rho2, vs1, vs2)
-    mu::Matrix{Float64} = zeros(NGLL, NGLL)
-    W::Array{Float64,3} = zeros(NGLL, NGLL, NelX*NelY)
-    
-    @inbounds for ey in 1:NelY
-        @inbounds for ex in 1:NelX
-            eo = (ey-1)*NelX + ex
-            
-            # Properties of heterogeneous medium
-            if ex*dxe >= ThickX && (dye <= ey*dye <= ThickY)
-                mu .= rho2*vs2^2
-            else
-                mu .= rho1*vs1^2
-            end
-            W[:,:,eo] = wgll2.*mu
-        end
-    end
-    W
-end
 
 function K_element(W, dxe, dye, NGLL, H, Nel)
     # Jacobians

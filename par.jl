@@ -3,6 +3,7 @@
 #######################################################################
 include("$(@__DIR__)/src/GetGLL.jl")		 #	Polynomial interpolation
 include("$(@__DIR__)/src/MeshBox.jl")		 # 	Build 2D mesh
+include("$(@__DIR__)/src/MaterialProperties.jl")		 # 	Build 2D mesh
 include("$(@__DIR__)/src/Assemble.jl")       #   Assemble mass and stiffness matrix
 include("$(@__DIR__)/src/Kassemble.jl")      #   Assemble mass and stiffness matrix
 #  include("$(@__DIR__)/trapezoidFZ/Assemble.jl") #   Gaussian fault zone assemble
@@ -138,9 +139,16 @@ function setParameters(FZdepth, res)
     M, dt::Float64, muMax, damage_idx = Massemble!(NGLL, NelX, NelY, dxe, dye, 
                         ThickX,ThickY, rho1, vs1, rho2, vs2, iglob,M, x, y, jac)
 
+    # Material properties for a narrow rectangular damaged zone of 
+    # half-thickness ThickY and depth ThickX 
+    W = material_properties(NelX, NelY,NGLL,dxe, dye, ThickX, ThickY, wgll2, rho1, rho2, vs1, vs2)
+
+
+    # Material properties for trapezoid damaged zone
+    #  M, W =  mat_trap(NelX, NelY,NGLL, dxe, dye, x,y, wgll2)
+
     # Stiffness Assembly
-    Ksparse::SparseMatrixCSC{Float64} = stiffness_assembly(NGLL, NelX, NelY, 
-                    nglob, dxe, dye, ThickX, ThickY, rho1, vs1, rho2, vs2, iglob)
+    Ksparse::SparseMatrixCSC{Float64} = stiffness_assembly(NGLL, NelX, NelY, dxe,dye, nglob, iglob, W) 
     
     # Time solver variables
     dt = CFL*dt
@@ -214,10 +222,9 @@ function setParameters(FZdepth, res)
 
 
     return params_int(Nel, FltNglob, yr2sec, Total_time, IDstate, nglob),
-            params_float(jac, coefint1, coefint2, ETA, Vpl, Vthres, Vevne, dt),
+            params_float(ETA, Vpl, Vthres, Vevne, dt),
             params_farray(fo, Vo, xLf, M, BcLC, BcTC, FltB, FltZ, FltX, cca, ccb, Seff, tauo, XiLf, x_out, y_out),
-            params_iarray(iFlt, iBcL, iBcT, FltIglobBC, FltNI, out_seis),
-            iglob, Ksparse
+            params_iarray(iFlt, iBcL, iBcT, FltIglobBC, FltNI, out_seis), Ksparse
 
 end
 
@@ -240,9 +247,9 @@ end
 
 struct params_float{T<:AbstractFloat}
     # Jacobian for global -> local coordinate conversion
-    jac::T
-    coefint1::T
-    coefint2::T
+    #  jac::T
+    #  coefint1::T
+    #  coefint2::T
 
     ETA::T
 
@@ -328,29 +335,29 @@ end
 
 
 # K diagonal vector computation
-function KdiagFunc!(FltNglob, NelY, NGLL, Nel, coefint1, coefint2, 
-                    iglob, W, H, Ht, FltNI)
+#  function KdiagFunc!(FltNglob, NelY, NGLL, Nel, coefint1, coefint2, 
+                    #  iglob, W, H, Ht, FltNI)
 
-	nglob = FltNglob*(NelY*(NGLL-1) + 1)
+	#  nglob = FltNglob*(NelY*(NGLL-1) + 1)
 
-    # Compute the diagonal of K
-    Kdiag::Vector{Float64} = zeros(nglob)
-    Klocdiag::Matrix{Float64} = zeros(NGLL, NGLL)
-    @inbounds for et = 1:Nel
-        ig = iglob[:,:,et]
-        wloc = W[:,:,et]
-        Klocdiag[:,:] .= 0
+    #  # Compute the diagonal of K
+    #  Kdiag::Vector{Float64} = zeros(nglob)
+    #  Klocdiag::Matrix{Float64} = zeros(NGLL, NGLL)
+    #  @inbounds for et = 1:Nel
+        #  ig = iglob[:,:,et]
+        #  wloc = W[:,:,et]
+        #  Klocdiag[:,:] .= 0
 
-        for k =  1:NGLL
-            for j = 1:NGLL
-                @inbounds @fastmath Klocdiag[k,j] +=  sum( coefint1*H[k,:].*(wloc[:,j].*Ht[:,k])
-                                + coefint2*(wloc[k,:].*H[j,:]).*Ht[:,j] )
-            end
-        end
+        #  for k =  1:NGLL
+            #  for j = 1:NGLL
+                #  @inbounds @fastmath Klocdiag[k,j] +=  sum( coefint1*H[k,:].*(wloc[:,j].*Ht[:,k])
+                                #  + coefint2*(wloc[k,:].*H[j,:]).*Ht[:,j] )
+            #  end
+        #  end
 
-        Kdiag[ig] .+= Klocdiag[:,:]
-    end
+        #  Kdiag[ig] .+= Klocdiag[:,:]
+    #  end
 
-    return Kdiag[FltNI]
+    #  return Kdiag[FltNI]
 
-end
+#  end
