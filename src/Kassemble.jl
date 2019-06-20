@@ -78,25 +78,21 @@ function K_element(W, dxe, dye, NGLL, H, Nel)
     
     term1::Float64 = 0.; term2::Float64 = 0.
     del = Matrix{Float64}(I,NGLL,NGLL)  # identity matrix
-    
-    #  @threads for tid in 1:nthreads()
-        #  len = div(NelX*NelY,nthreads())
-        #  domain = ((tid-1)*len +1):tid*len
 
         @inbounds for eo in 1:Nel
             Ke2 .= 0.
 
             ww = W[:,:,eo]
             term1 = 0.; term2 = 0.
-            @inbounds for i in 1:NGLL, j in 1:NGLL
+            for i in 1:NGLL, j in 1:NGLL
                 term1 = 0; term2 = 0
-                @inbounds for k in 1:NGLL, l in 1:NGLL
+                for k in 1:NGLL, l in 1:NGLL
                     term1 = 0; term2 = 0
-                    @simd for p in 1:NGLL
+                    for p in 1:NGLL
                         term1 += del[i,k]*ww[k,p]*(jac/dy_deta^2)*H[j,p]*H[l,p]
                         term2 += del[j,l]*ww[p,j]*(jac/dx_dxi^2)*H[i,p]*H[k,p]
                     end
-                    @inbounds Ke2[i,j,k,l] = term1 + term2
+                    Ke2[i,j,k,l] = term1 + term2
                 end
             end
             Ke[:,:,eo] = reshape(Ke2,NGLL*NGLL,NGLL*NGLL)

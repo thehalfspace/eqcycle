@@ -36,33 +36,33 @@
 
 #  include("$(@__DIR__)/damageEvol.jl")	    #	Set Parameters
 
-# Threaded matrix multiplication
-import Base: eltype, size
-#  import LinearAlgebra: A_mul_B!
-using Base.Threads
+#  # Threaded matrix multiplication
+#  import Base: eltype, size
+#  #  import LinearAlgebra: A_mul_B!
+#  using Base.Threads
 
-struct ThreadedMul{Tv,Ti}
-        A::SparseMatrixCSC{Tv,Ti}
-end
+#  struct ThreadedMul{Tv,Ti}
+        #  A::SparseMatrixCSC{Tv,Ti}
+#  end
 
-function LinearAlgebra.mul!(y::AbstractVector, M::ThreadedMul, x::AbstractVector)
-    @threads for i = 1 : M.A.n
-         _threaded_mul!(y, M.A, x, i)
-    end
-     y
-end
+#  function LinearAlgebra.mul!(y::AbstractVector, M::ThreadedMul, x::AbstractVector)
+    #  @threads for i = 1 : M.A.n
+         #  _threaded_mul!(y, M.A, x, i)
+    #  end
+     #  y
+#  end
 
-@inline function _threaded_mul!(y, A::SparseMatrixCSC{Tv}, x, i) where {Tv}
-    s = zero(Tv)
-    @inbounds for j = A.colptr[i] : A.colptr[i + 1] - 1
-        s += A.nzval[j] * x[A.rowval[j]]
-    end
+#  @inline function _threaded_mul!(y, A::SparseMatrixCSC{Tv}, x, i) where {Tv}
+    #  s = zero(Tv)
+    #  @inbounds for j = A.colptr[i] : A.colptr[i + 1] - 1
+        #  s += A.nzval[j] * x[A.rowval[j]]
+    #  end
     
-    @inbounds y[i] = s
-    y
-end
-eltype(M::ThreadedMul) = eltype(M.A)
-size(M::ThreadedMul, I...) = size(M.A, I...)
+    #  @inbounds y[i] = s
+    #  y
+#  end
+#  eltype(M::ThreadedMul) = eltype(M.A)
+#  size(M::ThreadedMul, I...) = size(M.A, I...)
 
 function main(P)
     
@@ -121,10 +121,6 @@ function main(P)
     tau3::Vector{Float64} = zeros(P[1].FltNglob)
     tauAB::Vector{Float64} = zeros(P[1].FltNglob)
     
-    # Vectorized element calculations
-    #  a_elem::Array{Float64,3} = zeros(size(P[5])) 
-    #  Conn = sparse(P[5][:], collect(1:size(P[6][:])[1]),1)
-
 
     # Initial state variable
     psi = P[3].tauo./(P[3].Seff.*P[3].ccb) - P[3].fo./P[3].ccb - (P[3].cca./P[3].ccb).*log.(2*v[P[4].iFlt]./P[3].Vo)
@@ -134,11 +130,6 @@ function main(P)
     
     # Skip lines 486-490
     # Skip lines 492-507: Outloc1, 2, variables.
-
-    # Display important parameters
-    #  println("Total number of nodes on fault: ", P.FltNglob)
-    #  println("Average node spacing: ", P.LX/(P.FltNglob-1))
-    #  @printf("dt: %1.09f s\n", dt)
 
     # Some more initializations
     r::Vector{Float64} = zeros(P[1].nglob)
