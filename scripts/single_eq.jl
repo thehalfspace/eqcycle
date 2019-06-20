@@ -2,100 +2,69 @@
 #   ISOLATE EACH EARTHQUAKE STUFF
 ########################################
 
-function event_indx2(O, P)
-    start_indx = zeros(size(O.tStart))
-    end_indx = zeros(size(O.tStart))
-    evno = zeros(size(O.tStart))
+# Proposal figure stuff
+function fig1(delfsec, delf5yr, FltX, Mw, hypo)
+    indx = findall(abs.(FltX) .<= 18e3)[1]
 
-    # indx = 2 for aseismic, 1 for seismic
-    indx::Array{Float64} = zeros(length(O.time_))
+    delfsec2 = delfsec[indx:end, :]
+
+    fig = PyPlot.figure(figsize=(12,5))
+
+    ax1 = plt.subplot2grid((1,6), (0,0), colspan=3)
+    #  ax2 = plt.subplot2grid((1,6), (0,3), colspan=1)
+    ax3 = plt.subplot2grid((1,6), (0,4), colspan=2)
+
+    #  ax1 = fig.add_subplot(131)
+    #  ax2 = fig.add_subplot(132)
+    #  ax3 = fig.add_subplot(133)
     
-    yr2sec = 365*24*60*60 
-    tvsx = 2*P.yr2sec
-    tvsxinc = tvsx
+    # Shade the fault zone region
+    x_shade = LinRange(5,25,25)
+    y1 = repeat([0],25)
+    y3 = repeat([24],25)
 
-    tevneinc = 1
-    Vevne = 0.001
+    ax1.plot(delf5yr, -FltX/1e3, color="royalblue", lw=1, alpha=1.0)
+    ax1.plot(delfsec2, -FltX[indx:end]/1e3, "-", color="chocolate", lw=1, alpha=1.0)
+    ax1.fill_between(x_shade, y3, y1, color="chocolate", alpha=0.2)
+    #  ax1.set_xlabel("Accumulated Slip (m)")
+    ax1.set_ylabel("Depth (km)")
+    ax1.set_title("Cumulative Slip History")
+    ax1.set_ylim([0,24])
+    ax1.set_xlim([5,20])
+    ax1.invert_yaxis()
 
-    ntvsx = 0
-    n3 = 0
-    nevne = 0
-    idelevne = 0
-    tevneb = 0
-    tevne = 0
-    
-    it = length(O.time_)
-  
-    for i = 1:it
-        if O.time_[i] > tvsx
-            ntvsx = ntvsx + 1
-            n3 = n3 + 1
-            indx[n3] = 2     # interseismic
-            tvsx = tvsx +tvsxinc
-        end
-        
-        if O.Vfmax[i] > Vevne 
-            if idelevne == 0
-                nevne = nevne + 1
-                idelevne = 1
-                tevneb = O.time_[i]
-                tevne = tevneinc
-                n3 = n3 + 1
-                indx[n3] = 1     # seismic
-            end
+    # hypocenter
+    #  hist = fit(Histogram, -hypo./1e3, closed=:right, nbins=10)
 
-            if idelevne == 1 && (O.time_[i] - tevneb) > tevne
-                nevne = nevne + 1
-                n3 = n3 + 1
-                indx[n3] = 1
-                #Vfsec[:,nevne] = 2*v[S.iFlt] .+ P.Vpl
-                #Tausec[:,nevne] = (tau + tauo)./1e6
-                tevne = tevne + tevneinc
-            end
+    #  y1 = repeat([0],10)
+    #  y3 = repeat([24],10)
+    #  ax2.barh(hist.edges[1][1:end-1], hist.weights)
+    #  #  ax2.fill_between(LinRange(0,10,10),y3,y1, color="tab:blue", alpha=0.3)
+    #  ax2.set_xlabel("Number of Earthquakes")
+    #  #  ax2.set_ylabel("Depth (km)")
+    #  ax2.set_title("Hypocenter Location")
+    #  ax2.set_ylim([0, 24])
+    #  ax2.invert_yaxis()
+    #  fig.tight_layout()
 
-        else
-            idelevne = 0
-        end
-    end 
+    # mfd
+    hist2 = fit(Histogram, Mw, nbins = 9)
 
-    return indx[1:n3]
-end
+    # Cumulative
+    cum = cumsum(hist2.weights[end:-1:1])[end:-1:1]
+
+    ax3.plot(hist2.edges[1][1:end-1], cum, "k.", markersize=10) 
+    ax3.set_xlabel("Moment Magnitude (Mw)")
+    ax3.set_ylabel("Number of Earthquakes")
+    ax3.set_yscale("log")
+    ax3.set_title("Magnitude-frequency distribution")
+    #  ax[:set_xlim]([2, 7])
+    ax3.set_ylim([1, 30])
 
 
-# get stress/sliprate for one event
-function count_event(O, indx)
-    counter = zeros(size(O.tStart))
-    j = 1; iterator = 1
-    for i in indx
-        if i == 2
-            counter[j] += 1
-            iterator = 1
-        else
-            if iterator == 1
-                println(i)
-                j += 1
-                iterator = 0
-            end
-        end
-    end
-    return counter
-end
-
-
-function slipvel_event(O, indx)
-
-    fig = PyPlot.figure()
-    ax = fig.add_subplot(111)
-
-    ax.plot(delf5yr, FltX/1e3, color="royalblue", lw=1, alpha=1.0)
-    ax.set_xlabel("Accumulated Slip (m)")
-    ax.set_ylabel("Depth (km)")
-    ax.set_title("Cumulative Slip History")
-    ax.set_ylim([-24, 0])
-    ax.set_xlim([1,15])  #[0,maximum(delf5yr)])
     show()
     
-    figname = string(path, "slipvel_event.pdf")
-    #  fig.savefig(figname, dpi = 300)
+    figname = string(path, "proposal_fig.png")
+    fig.savefig(figname, dpi = 300)
 
 end

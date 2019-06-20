@@ -4,22 +4,19 @@
 #################################
 
 using StatsBase
-#  using PyPlot
+using PyPlot
 
-#  PyPlot.matplotlib[:rc]("patch.force_edgecolor=true")
+PyPlot.matplotlib[:rc]("patch.force_edgecolor=true")
 
 #-------------------------------
 # Compute hypocenter locations
 #------------------------------
 function plotHypo(hypo)  #S, Slip, SlipVel, Stress, time_)
 
-    #  delfafter, stressdrops, tStart, tEnd, vhypo, hypo = 
-                                        #  Coslip(S, Slip, SlipVel, Stress, time_)
-
     # Plot hypocenter
-    hist = fit(Histogram, hypo./1e3, closed=:right, nbins=10)
+    hist = fit(Histogram, -hypo./1e3, closed=:right, nbins=10)
 
-    fig = PyPlot.figure(figsize=(12,9))
+    fig = PyPlot.figure(figsize=(5,7))
     ax = fig[:add_subplot](111)
 
     ax[:barh](hist.edges[1][1:end-1], hist.weights)
@@ -27,11 +24,12 @@ function plotHypo(hypo)  #S, Slip, SlipVel, Stress, time_)
     ax[:set_xlabel]("Number of Earthquakes")
     ax[:set_ylabel]("Depth (km)")
     ax[:set_title]("Hypocenter Location")
-    ax[:set_ylim]([-20, 0])
-    #  ax[:legend](loc="upper right")
+    ax[:set_ylim]([0, 24])
+    ax.invert_yaxis()
+    fig.tight_layout()
     show()
 
-    figname = string(path, "hypo.pdf")
+    figname = string(path, "hypo.png")
     fig[:savefig](figname, dpi = 300)
 
 end
@@ -99,6 +97,8 @@ function moment_magnitude(P, S, delfafter, stressdrops ,time_)
     iter = length(delfafter[1,:])
     mu = P.rho1*P.vs1^2
     seismic_moment = zeros(iter)
+    rupture_length = zeros(iter)
+    fault_slip = zeros(iter)
     temp_sigma = 0
     iter2 = 1 
 
@@ -113,12 +113,13 @@ function moment_magnitude(P, S, delfafter, stressdrops ,time_)
 
         # area = slip*(rupture dimension along depth)
         # zdim = rupture along z dimension = depth rupture dimension
-        area = 0; zdim = 0; temp_sigma = 0
+        area = 0; zdim = 0; temp_sigma = 0; temp_slip=0;
 
         for j = 1:P.FltNglob
             if delfafter[j,i] >= slip_thres
                 area = area + delfafter[j,i]*dx[j-1]
                 zdim = zdim + dx[j-1]
+                temp_slip = temp_slip + delfafter[j,i]
 
                 # Avg. stress drops along rupture area
                 temp_sigma = temp_sigma + stressdrops[j,i]*dx[j-1]
@@ -127,6 +128,54 @@ function moment_magnitude(P, S, delfafter, stressdrops ,time_)
         
         seismic_moment[i] = mu*area*zdim
         del_sigma[i] = temp_sigma/zdim
+        fault_slip[i] = temp_slip/zdim
+        rupture_length[i] = zdim
+
+    end
+    #  seismic_moment = filter!(x->x!=0, seismic_moment)
+    #  del_sigma = filter!(x->x!=0, del_sigma)
+    Mw = (2/3)*log10.(seismic_moment.*1e7) .- 10.7
+
+    return Mw, del_sigma, fault_slip, rupture_length
+end
+
+function moment_magnitude_new(mu, P3, FltX, delfafter, stressdrops ,time_)
+    # Final coseismic slip of each earthquake
+    #  delfafter, stressdrops = Coslip(S, Slip, SlipVel, Stress, time_)
+
+    iter = length(delfafter[1,:])
+    seismic_moment = zeros(iter)
+    fault_slip = zeros(iter)
+    temp_sigma = 0
+    iter2 = 1 
+
+    del_sigma = zeros(iter)
+    
+    dx = diff(FltX)
+
+    for i = 1:iter
+        
+        # slip threshold = 1% of maximum slip
+        slip_thres = 0.01*maximum(delfafter[:,i])
+
+        # area = slip*(rupture dimension along depth)
+        # zdim = rupture along z dimension = depth rupture dimension
+        area = 0; zdim = 0; temp_sigma = 0; temp_slip = 0
+
+        for j = 1:P3.FltNglob
+            if delfafter[j,i] >= slip_thres
+                area = area + delfafter[j,i]*dx[j-1]
+                zdim = zdim + dx[j-1]
+                temp_slip = temp_slip + delfafter[j,i]
+
+                # Avg. stress drops along rupture area
+                temp_sigma = temp_sigma + stressdrops[j,i]*dx[j-1]
+            end
+        end
+        
+        seismic_moment[i] = mu*area*zdim
+        del_sigma[i] = temp_sigma/zdim
+        fault_slip[i] = temp_slip/zdim
 
 
     end
@@ -134,7 +183,29 @@ function moment_magnitude(P, S, delfafter, stressdrops ,time_)
     #  del_sigma = filter!(x->x!=0, del_sigma)
     Mw = (2/3)*log10.(seismic_moment.*1e7) .- 10.7
 
-    return Mw, del_sigma
+    return Mw, del_sigma, fault_slip
+end
+
+
+#--------------------------
+# Earthquake scaling laws
+#--------------------------
+function scaling(a,b)
+
+    fig = PyPlot.figure(figsize=(12,9))
+    ax = fig[:add_subplot](111)
+
+    ax[:plot](a,b, "k.", markersize=20)
+    ax[:set_xlabel]("Slip (m)")
+    ax[:set_ylabel]("Rupture Length (m)")
+    #  ax[:set_yscale]("log")
+    #  ax[:set_xscale]("log")
+    ax[:set_title]("Rupture length vs Slip")
+    #  ax[:legend](loc="upper right")
+    show()
+
+    figname = string(path, "scaling1.png")
+    fig[:savefig](figname, dpi = 300)
 end
 
 
@@ -143,28 +214,65 @@ end
 #...........
 function MwPlot(Mw)
 
-    hist = fit(Histogram, Mw, nbins = 20)
+    hist = fit(Histogram, Mw, nbins = 9)
 
     # Cumulative
     cum = cumsum(hist.weights[end:-1:1])[end:-1:1]
 
-    fig = PyPlot.figure(figsize=(12,9))
+    fig = PyPlot.figure(figsize=(8,7))
     ax = fig[:add_subplot](111)
 
     #  ax[:plot](hist.edges[1][1:end-1], hist.weights, ".", label="Non-cumulative")
-    ax[:plot](hist.edges[1][1:end-1], cum, "k.", markersize=20, label="Cumulative")
+    ax[:plot](hist.edges[1][1:end-1], cum, "k.--", markersize=20) #, label="Cumulative")
+    #  ax[:set_xlabel]("Moment Magnitude (Mw)")
+    #  ax[:set_ylabel]("Number of Earthquakes")
+    ax[:set_yscale]("log")
+    #  ax[:set_title]("Magnitude-frequency distribution")
+    #  ax[:set_xlim]([2, 7])
+    ax[:set_ylim]([1, 30])
+    #  ax[:legend](loc="upper right")
+    show()
+
+    figname = string(path, "mfd.png")
+    fig[:savefig](figname, dpi = 300)
+end
+
+function MwPlot2(Mw1, Mw2, Mw3, Mw4, Mw5, Mw6)
+
+    hist1 = fit(Histogram, Mw1, nbins = 6)
+    hist2 = fit(Histogram, Mw2, nbins = 6)
+    hist3 = fit(Histogram, Mw3, nbins = 6)
+    hist4 = fit(Histogram, Mw4, nbins = 6)
+    hist5 = fit(Histogram, Mw5, nbins = 6)
+    hist6 = fit(Histogram, Mw5, nbins = 6)
+
+    # Cumulative
+    cum1 = cumsum(hist1.weights[end:-1:1])[end:-1:1]
+    cum2 = cumsum(hist2.weights[end:-1:1])[end:-1:1]
+    cum3 = cumsum(hist3.weights[end:-1:1])[end:-1:1]
+    cum4 = cumsum(hist4.weights[end:-1:1])[end:-1:1]
+    cum5 = cumsum(hist5.weights[end:-1:1])[end:-1:1]
+
+    fig = PyPlot.figure(figsize=(12,9))
+    ax = fig[:add_subplot](111)
+
+    ax[:plot](hist1.edges[1][1:end-1], cum1, ".-", markersize=10, label="400 m")
+    ax[:plot](hist2.edges[1][1:end-1], cum2, ".-", markersize=10, label="320 m")
+    ax[:plot](hist3.edges[1][1:end-1], cum3, ".-", markersize=10, label="250 m")
+    ax[:plot](hist4.edges[1][1:end-1], cum4, ".-", markersize=10, label="160 m")
+    ax[:plot](hist5.edges[1][1:end-1], cum5, ".-", markersize=10, label="100 m")
     ax[:set_xlabel]("Moment Magnitude (Mw)")
     ax[:set_ylabel]("Number of Earthquakes")
     ax[:set_yscale]("log")
     ax[:set_title]("Magnitude-frequency distribution")
-    ax[:set_xlim]([2, 7])
+    #  ax[:set_xlim]([1.7, 7])
+    ax[:set_ylim]([1e-1, 1e3])
     ax[:legend](loc="upper right")
     show()
 
-    figname = string(path, "mfd.pdf")
+    figname = string(path, "mfdcomp.png")
     fig[:savefig](figname, dpi = 300)
 end
-
 
 #.................................
 # Plot earthquake catalog

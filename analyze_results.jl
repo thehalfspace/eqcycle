@@ -4,9 +4,9 @@
 
 include("output.jl")
 
-include("scripts/earthquake-cycles.jl")
+include("scripts/earthquake_cycles.jl")
 include("scripts/plots.jl")
-include("scripts/cumulative-slip.jl")
+include("scripts/cumulative_slip.jl")
 
 # path to save files
 global path = "/Users/prith/jsem2/plots/test01/"
@@ -21,42 +21,36 @@ open("data/test01.out") do f
 end
 
 
-#  delfsec, delf5yr = cumSlip(O.Slip, O.SlipVel, O.time_)
+P1 = P[1]
+P2 = P[2]
+P3 = P[3]
+P4 = P[4]
+
+FltX =P3.FltX
+
 delfsec = O.seismic_slip
 delf5yr = O.is_slip
 delfafter = O.delfafter
 stressdrops = O.taubefore-O.tauafter
+seismic_stress = O.seismic_stress
+seismic_slipvel = O.seismic_slipvel
+seismic_slip = O.seismic_slip
+index_eq = O.index_eq
+is_stress = O.is_stress
+is_slipvel = O.is_slipvel
+is_slip = O.is_slip
+tStart = O.tStart
+tEnd = O.tEnd
+delfafter = O.delfafter
+hypo = O.hypo
+time_ = O.time_
+Vfmax = O.Vfmax
 
+rho1 = 2670
+vs1 = 3464
+rho2 = 2500
+vs2 = 0.6*vs1
+mu = rho2*vs2^2
 
-#  Mw, del_sigma = moment_magnitude(P, S, delfafter, stressdrops, O.time_);
+Mw, del_sigma, fault_slip = moment_magnitude_new(mu, P1, FltX, delfafter, stressdrops, O.time_);
 
-function del_sigmaPlot(Mw, del_sigma)
-
-    fig = PyPlot.figure(figsize=(6,4.5), dpi = 120)
-    ax = fig[:add_subplot](111)
-
-    ax[:plot](Mw, del_sigma, ".")
-    ax[:set_xlabel]("Moment Magnitude (Mw)")
-    ax[:set_ylabel]("Stress Drops (MPa)")
-    ax[:set_title]("Stress Drops vs. Moment Magnitude")
-    #  ax[:set_yscale]("log")
-    show()
-
-    figname = string(path, "stressdrop.pdf")
-    fig[:savefig](figname, dpi = 300)
-end
-
-function MwHypoPlot(Mw, hypo)
-
-    fig = PyPlot.figure(figsize=(6,4.5), dpi = 120)
-    ax = fig[:add_subplot](111)
-
-    ax[:plot](Mw, hypo./1e3, ".")
-    ax[:set_xlabel]("Moment Magnitude (Mw)")
-    ax[:set_ylabel](" Depth (km)")
-    ax[:set_title]("Magnitude vs. Depth")
-    show()
-
-    figname = string(path, "hypo.pdf")
-    fig[:savefig](figname, dpi = 300)
-end
