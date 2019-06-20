@@ -212,9 +212,14 @@ function main(P)
     p = aspreconditioner(ml)
     tmp = copy(a)
     
-    Ksparse = ThreadedMul(Ksparse)
-    nKsparse = ThreadedMul(nKsparse)
-    kni = ThreadedMul(kni)
+    #  Ksparse = ThreadedMul(Ksparse)
+    #  nKsparse = ThreadedMul(nKsparse)
+    #  kni = ThreadedMul(kni)
+
+    # faster matrix multiplication
+    Ksparse = Ksparse'
+    nKsparse = nKsparse'
+    kni = kni'
 
 
     #....................

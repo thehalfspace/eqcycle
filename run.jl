@@ -25,11 +25,11 @@ println(nthreads())
 
 include("$(@__DIR__)/par.jl")	    #	Set Parameters
 
-P = setParameters(0e3,2)      # args = fault zone depth, resolution
+P = setParameters(24e3,6)      # args = fault zone depth, resolution
 
 include("$(@__DIR__)/src/dtevol.jl")          
-include("$(@__DIR__)/src/NRsearch.jl")
-include("$(@__DIR__)/src/otherFunctions.jl")
+include("$(@__DIR__)/src/NRsearch_serial.jl")
+include("$(@__DIR__)/src/otherFunctions_serial.jl")
 
 include("$(@__DIR__)/src/main.jl")
 
