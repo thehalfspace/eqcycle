@@ -39,6 +39,10 @@ struct params_int{T<:Int}
 end
 
 struct params_float{T<:AbstractFloat}
+    # Jacobian for global -> local coordinate conversion
+    #  jac::T
+    #  coefint1::T
+    #  coefint2::T
     ETA::T
 
     # Earthquake parameters
@@ -68,6 +72,11 @@ struct params_farray{T<:Array{Float64}}
     ccb::T
     Seff::T
     tauo::T
+    XiLf::T
+    #  diagKnew::T
+
+    xout::T
+    yout::T
 end
 
 struct params_iarray{T<:Array{Int}}
