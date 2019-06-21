@@ -251,7 +251,7 @@ function main(P)
                 #  dnew = -(kni\rhs)
 
                 # mgcg
-                dnew = cg!(dnew, kni, rhs, Pl=p)
+                dnew = cg!(dnew, kni, rhs, Pl=p, tol=1e-6)
 
                 
                 # update displacement on the medium
@@ -266,6 +266,8 @@ function main(P)
                 a = Ksparse*d
 
                 tau1 .= -a[P[4].iFlt]./P[3].FltB
+
+
                 
                 # Function to calculate on-fault sliprate
                 psi1, Vf1 = slrFunc!(P[3], NFBC, P[1].FltNglob, psi, psi1, Vf, Vf1, P[1].IDstate, tau1, dt)

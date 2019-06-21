@@ -82,7 +82,7 @@ function setParameters(FZdepth, res)
 
     fo::Vector{Float64} = repeat([0.6], FltNglob) #	Reference friction coefficient
     Vo::Vector{Float64} = repeat([1e-6], FltNglob)		#	Reference velocity 'Vo'
-    xLf::Vector{Float64} = repeat([0.008], FltNglob)    #	Dc (Lc) = 8 mm
+    xLf::Vector{Float64} = repeat([0.004], FltNglob)    #	Dc (Lc) = 8 mm
 
     Vthres::Float64 = 0.001
     Vevne::Float64 = Vthres
@@ -217,7 +217,7 @@ function setParameters(FZdepth, res)
 
     # Display important parameters
     println("Total number of nodes on fault: ", FltNglob)
-    println("Average node spacing: ", LX/(FltNglob-1))
+    println("Average node spacing: ", LX/(FltNglob-1), " m\n")
     @printf("dt: %1.09f s\n", dt)
 
 
