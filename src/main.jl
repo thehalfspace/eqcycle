@@ -252,7 +252,6 @@ function main(P)
 
                 # mgcg
                 dnew = cg!(dnew, kni, rhs, Pl=p, tol=1e-6)
-
                 
                 # update displacement on the medium
                 d[P[4].FltNI] .= dnew
@@ -265,9 +264,10 @@ function main(P)
                 #  mul!(a,Ksparse,d)
                 a = Ksparse*d
 
+                # Enforce K*d to be zero for velocity boundary
+                a[P[4].FltIglobBC] .= 0.
+
                 tau1 .= -a[P[4].iFlt]./P[3].FltB
-
-
                 
                 # Function to calculate on-fault sliprate
                 psi1, Vf1 = slrFunc!(P[3], NFBC, P[1].FltNglob, psi, psi1, Vf, Vf1, P[1].IDstate, tau1, dt)
@@ -307,6 +307,9 @@ function main(P)
             # Internal forces -K*d[t+1] stored in global array 'a'
             #  mul!(a,nKsparse,d)
             a = nKsparse*d
+
+            # Enforce K*d to be zero for velocity boundary
+            a[P[4].FltIglobBC] .= 0.
 
             # Absorbing boundaries
             a[P[4].iBcL] .= a[P[4].iBcL] .- P[3].BcLC.*v[P[4].iBcL]
