@@ -153,9 +153,9 @@ function main(P)
     #  hypo, time_, Vfmax
     nseis = length(P[4].out_seis)
     
-    output = results(zeros(P[1].FltNglob, 150000), zeros(P[1].FltNglob, 150000), 
-                     zeros(P[1].FltNglob, 150000), 
-                     zeros(200000), 
+    output = results(zeros(P[1].FltNglob, 60000), zeros(P[1].FltNglob, 60000), 
+                     zeros(P[1].FltNglob, 60000), 
+                     zeros(80000), 
                      zeros(P[1].FltNglob, 2000), zeros(P[1].FltNglob, 2000), 
                      zeros(P[1].FltNglob, 2000),
                      zeros(100000,nseis), zeros(100000,nseis), zeros(100000,nseis),
@@ -168,13 +168,13 @@ function main(P)
     tvsx::Float64 = 2*P[1].yr2sec  # 2 years for interseismic period
     tvsxinc::Float64 = tvsx
 
-    tevneinc::Int64 = 8    # 8 second for seismic period
+    tevneinc::Float64 = 0.5.    # 0.5 second for seismic period
     delfref = zeros(P[1].FltNglob)
 
     # Iterators
     idelevne::Int= 0
-    tevneb::Float64= 0
-    tevne::Float64= 0
+    tevneb::Float64= 0.
+    tevne::Float64= 0.
     ntvsx::Int= 0
     nevne::Int= 0
     slipstart::Int= 0
@@ -390,7 +390,7 @@ function main(P)
                 nevne = nevne + 1
                 idd += 1
                 idelevne = 1
-                tevneb = output.time_[it]
+                tevneb = t
                 tevne = tevneinc
 
                 output.seismic_slip[:,nevne] = 2*d[P[4].iFlt] .+ P[2].Vpl*t
@@ -399,7 +399,7 @@ function main(P)
                 output.index_eq[idd] = 2
             end
 
-            if idelevne == 1 && (output.time_[it] - tevneb) > tevne
+            if idelevne == 1 && (t - tevneb) > tevne
                 nevne = nevne + 1
                 idd += 1
                 
@@ -409,6 +409,9 @@ function main(P)
                 output.index_eq[idd] = 2
                 tevne = tevne + tevneinc
             end
+
+        else
+            idelevne = 0
         end
 
         # Output timestep info on screen

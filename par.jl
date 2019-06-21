@@ -41,7 +41,7 @@ function setParameters(FZdepth, res)
 
     yr2sec::Int = 365*24*60*60
     
-    Total_time::Int = 600*yr2sec     # Set the total time for simulation here
+    Total_time::Int = 137*yr2sec     # Set the total time for simulation here
 
     CFL::Float64 = 0.6	#	Courant stability number
      
@@ -50,7 +50,7 @@ function setParameters(FZdepth, res)
     # Some other time variables used in the loop
     dtincf::Float64 = 1.2
     gamma_::Float64 = pi/4
-    dtmax::Int = 50 * 24 * 60*60		# 5 days
+    dtmax::Int = 50 * 24 * 60*60		# 50 days
 
 
     #...................
@@ -82,7 +82,7 @@ function setParameters(FZdepth, res)
 
     fo::Vector{Float64} = repeat([0.6], FltNglob) #	Reference friction coefficient
     Vo::Vector{Float64} = repeat([1e-6], FltNglob)		#	Reference velocity 'Vo'
-    xLf::Vector{Float64} = repeat([0.004], FltNglob)    #	Dc (Lc) = 8 mm
+    xLf::Vector{Float64} = repeat([0.008], FltNglob)    #	Dc (Lc) = 8 mm
 
     Vthres::Float64 = 0.001
     Vevne::Float64 = Vthres
