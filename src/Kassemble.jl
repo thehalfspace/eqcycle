@@ -76,7 +76,7 @@ function K_element(W, dxe, dye, NGLL, H, Nel)
     Ke::Array{Float64,3} = zeros(NGLL*NGLL,NGLL*NGLL, Nel)
     ig::Matrix{Int64} = zeros(NGLL,NGLL)  # iterator
     
-    term1::Float64 = 0.; term2::Float64 = 0.
+    #  term1::Float64 = 0.; term2::Float64 = 0.
     del = Matrix{Float64}(I,NGLL,NGLL)  # identity matrix
 
         @inbounds for eo in 1:Nel
@@ -85,9 +85,8 @@ function K_element(W, dxe, dye, NGLL, H, Nel)
             ww = W[:,:,eo]
             term1 = 0.; term2 = 0.
             for i in 1:NGLL, j in 1:NGLL
-                term1 = 0; term2 = 0
                 for k in 1:NGLL, l in 1:NGLL
-                    term1 = 0; term2 = 0
+                    term1 = 0.; term2 = 0.
                     for p in 1:NGLL
                         term1 += del[i,k]*ww[k,p]*(jac/dy_deta^2)*H[j,p]*H[l,p]
                         term2 += del[j,l]*ww[p,j]*(jac/dx_dxi^2)*H[i,p]*H[k,p]

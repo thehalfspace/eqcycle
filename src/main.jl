@@ -168,7 +168,7 @@ function main(P)
     tvsx::Float64 = 2*P[1].yr2sec  # 2 years for interseismic period
     tvsxinc::Float64 = tvsx
 
-    tevneinc::Float64 = 0.5.    # 0.5 second for seismic period
+    tevneinc::Float64 = 0.5    # 0.5 second for seismic period
     delfref = zeros(P[1].FltNglob)
 
     # Iterators
