@@ -5,18 +5,23 @@
 # Fault Boundary function
 function FBC!(IDstate::Int, P::params_farray, NFBC::Int, FltNglob::Int, psi1::Array{Float64}, Vf1::Array{Float64}, tau1::Array{Float64}, psi2::Array{Float64}, Vf2::Array{Float64}, tau2::Array{Float64}, psi::Array{Float64}, Vf::Array{Float64}, FltVfree::Array{Float64}, dt::Float64)
 
+    tauNR::Vector{Float64} = zeros(FltNglob)
+
    for j = NFBC:FltNglob 
 
         psi1[j] = IDS!(P.xLf[j], P.Vo[j], psi[j], dt, Vf[j], 1e-5, IDstate)
 
         Vf1[j], tau1[j] = NRsearch!(P.fo[j], P.Vo[j], P.cca[j], P.ccb[j], P.Seff[j],
-                                  0., P.tauo[j], psi1[j], P.FltZ[j], FltVfree[j])
+                                    tauNR[j], P.tauo[j], psi1[j], P.FltZ[j], FltVfree[j])
     
         if Vf[j] > 1e10 || isnan(Vf[j]) == 1 || isnan(tau1[j]) == 1
             
             println("Fault Location = ", j)
             println(" Vf = ", Vf[j])
             println(" tau1 = ", tau1[j])
+
+            println("psi =", psi[j])
+            println("psi1 =", psi1[j])
             # Save simulation results
             #filename = string(dir, "/data", name, "nrfail.jld2")
             #@save filename results(Stress,SlipVel, Slip, time_) 

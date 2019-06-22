@@ -60,13 +60,18 @@ end
 
 # Slip rates on fault for quasi-static regime
 function slrFunc!(P::params_farray, NFBC::Int, FltNglob::Int, psi::Array{Float64}, psi1::Array{Float64}, Vf::Array{Float64}, Vf1::Array{Float64}, IDstate::Int, tau1::Array{Float64}, dt::Float64)
+    
+    tauAB::Vector{Float64} = zeros(FltNglob)
+
+    #  temp::Float64 = 0.
 
     for j = NFBC:FltNglob
 
+        #  temp = 0.
         psi1[j] = IDS!(P.xLf[j], P.Vo[j], psi[j], dt, Vf[j], 1e-6, IDstate)
 
-        temp = tau1[j] + P.tauo[j]
-        fa = temp/(P.Seff[j]*P.cca[j])
+        tauAB[j] = tau1[j] + P.tauo[j]
+        fa = tauAB[j]/(P.Seff[j]*P.cca[j])
         help = -(P.fo[j] + P.ccb[j]*psi1[j])/P.cca[j]
         help1 = exp(help + fa)
         help2 = exp(help - fa)

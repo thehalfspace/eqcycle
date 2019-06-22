@@ -119,7 +119,6 @@ function main(P)
     tau1::Vector{Float64} = zeros(P[1].FltNglob)
     tau2::Vector{Float64} = zeros(P[1].FltNglob)
     tau3::Vector{Float64} = zeros(P[1].FltNglob)
-    tauAB::Vector{Float64} = zeros(P[1].FltNglob)
     
 
     # Initial state variable
@@ -140,7 +139,6 @@ function main(P)
     dPre::Vector{Float64} = zeros(P[1].nglob)
     vPre::Vector{Float64} = zeros(P[1].nglob)
     dd::Vector{Float64} = zeros(P[1].nglob)
-    dacum::Vector{Float64} = zeros(P[1].nglob)
     dnew::Vector{Float64} = zeros(length(P[4].FltNI))
 
     # Preallocate variables with unknown size
