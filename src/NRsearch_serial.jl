@@ -3,7 +3,7 @@
 ####################################
 
 # Fault Boundary function
-function FBC!(IDstate::Int, P::params_farray, NFBC::Int, FltNglob::Int, psi1::Array{Float64}, Vf1::Array{Float64}, tau1::Array{Float64}, psi2::Array{Float64}, Vf2::Array{Float64}, tau2::Array{Float64}, psi::Array{Float64}, Vf::Array{Float64}, FltVfree::Array{Float64}, dt::Float64)
+function FBC!(IDstate, P::params_farray, NFBC, FltNglob, psi1, Vf1, tau1, psi2, Vf2, tau2, psi, Vf, FltVfree, dt)
 
     tauNR::Vector{Float64} = zeros(FltNglob)
 
@@ -42,7 +42,7 @@ end
 
 
 # Newton Rhapson search method
-function NRsearch!(fo::Float64, Vo::Float64, cca::Float64, ccb::Float64, Seff::Float64, tau::Float64, tauo::Float64, psi::Float64, FltZ::Float64, FltVfree::Float64)
+function NRsearch!(fo, Vo, cca, ccb, Seff, tau, tauo, psi, FltZ, FltVfree)
 
     Vw = 1e10
     fact = 1 + (Vo/Vw)*exp(-psi)

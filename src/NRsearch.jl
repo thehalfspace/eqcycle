@@ -8,7 +8,7 @@
 exp1(x::Float64) = ccall(:exp, Float64, (Float64,), x)
 log1(x::Float64) = ccall(:log, Float64, (Float64,), x)
 
-function FBC!(IDstate::Int, P::params_farray, NFBC::Int, FltNglob::Int, psi1::Array{Float64}, Vf1::Array{Float64}, tau1::Array{Float64}, psi2::Array{Float64}, Vf2::Array{Float64}, tau2::Array{Float64}, psi::Array{Float64}, Vf::Array{Float64}, FltVfree::Array{Float64}, dt::Float64)
+function FBC!(IDstate, P::params_farray, NFBC, FltNglob, psi1, Vf1, tau1, psi2, Vf2, tau2, psi, Vf, FltVfree, dt)
 
         @threads for tid in 1:nthreads()
             len = div(length(NFBC:FltNglob), nthreads())

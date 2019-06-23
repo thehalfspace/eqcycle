@@ -2,7 +2,7 @@ exp1(x::Float64) = ccall(:exp, Float64, (Float64,), x)
 log1(x::Float64) = ccall(:log, Float64, (Float64,), x)
 
 # IDstate functions
-function IDS!(xLf::Float64, Vo::Float64, psi::Float64, dt::Float64, Vf::Float64, cnd::Float64, IDstate = 2)
+function IDS!(xLf, Vo, psi, dt, Vf, cnd, IDstate = 2)
     #= compute slip-rates on fault based on different
        formulations =#
 
@@ -32,7 +32,7 @@ function IDS!(xLf::Float64, Vo::Float64, psi::Float64, dt::Float64, Vf::Float64,
 end
 
 # On fault slip rates
-function IDS2!(xLf::Float64, Vo::Float64, psi::Float64, psi1::Float64, dt::Float64, Vf::Float64, Vf1::Float64, IDstate = 2)
+function IDS2!(xLf, Vo, psi, psi1, dt, Vf, Vf1, IDstate = 2)
             
     if IDstate == 1
         psi2 = psi + 0.5*dt*( (Vo/xLf)*exp1(-psi) - abs(Vf)/xLf 
@@ -59,7 +59,7 @@ function IDS2!(xLf::Float64, Vo::Float64, psi::Float64, psi1::Float64, dt::Float
 end
 
 # Slip rates on fault for quasi-static regime
-function slrFunc!(P::params_farray, NFBC::Int, FltNglob::Int, psi::Array{Float64}, psi1::Array{Float64}, Vf::Array{Float64}, Vf1::Array{Float64}, IDstate::Int, tau1::Array{Float64}, dt::Float64)
+function slrFunc!(P::params_farray, NFBC, FltNglob, psi, psi1, Vf, Vf1, IDstate, tau1, dt)
     
     tauAB::Vector{Float64} = zeros(FltNglob)
 

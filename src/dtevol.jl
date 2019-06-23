@@ -2,7 +2,7 @@
 #   Compute the timestep for next iteration
 ############################################
 
-function dtevol!(dt::Float64, dtmin::Float64, XiLf::Array{Float64}, FaultNglob::Int, NFBC::Int, Vf::Array{Float64}, isolver::Int)
+function dtevol!(dt, dtmin, XiLf, FaultNglob, NFBC, Vf, isolver)
     
     dtmax::Int = 50 * 24 * 60*60		# 5 days
     dtincf::Float64 = 1.2

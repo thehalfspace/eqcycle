@@ -28,6 +28,40 @@ function FEsparse(Nel, Ke, iglob)
     SparseMatrixCSC(K)
 end
 
+function K_element(W, dxe, dye, NGLL, H, Nel)
+    # Jacobians
+    dx_dxi::Float64 = 0.5*dxe
+    dy_deta::Float64 = 0.5*dye
+    jac::Float64 = dx_dxi*dy_deta
+
+    ww::Matrix{Float64} = zeros(NGLL, NGLL)
+    Ke2::Array{Float64,4} = zeros(NGLL,NGLL,NGLL,NGLL)
+    Ke::Array{Float64,3} = zeros(NGLL*NGLL,NGLL*NGLL, Nel)
+    ig::Matrix{Int64} = zeros(NGLL,NGLL)  # iterator
+    
+    #  term1::Float64 = 0.; term2::Float64 = 0.
+    del = Matrix{Float64}(I,NGLL,NGLL)  # identity matrix
+
+        @inbounds for eo in 1:Nel
+            Ke2 .= 0.
+
+            ww = W[:,:,eo]
+            term1 = 0.; term2 = 0.
+            for i in 1:NGLL, j in 1:NGLL
+                for k in 1:NGLL, l in 1:NGLL
+                    term1 = 0.; term2 = 0.
+                    for p in 1:NGLL
+                        term1 += del[i,k]*ww[k,p]*(jac/dy_deta^2)*H[j,p]*H[l,p]
+                        term2 += del[j,l]*ww[p,j]*(jac/dx_dxi^2)*H[i,p]*H[k,p]
+                    end
+                    Ke2[i,j,k,l] = term1 + term2
+                end
+            end
+            Ke[:,:,eo] = reshape(Ke2,NGLL*NGLL,NGLL*NGLL)
+        end
+    Ke
+end
+
 # My naive approach
 #  function assembley_2(Ke, iglob, Nel, nglob)
     #  Ksparse::SparseMatrixCSC{Float64} = spzeros(nglob,nglob) 
@@ -65,38 +99,3 @@ end
     #  return sparse(I,J,V,nglob,nglob,+)
 #  end
 
-function K_element(W, dxe, dye, NGLL, H, Nel)
-    # Jacobians
-    dx_dxi::Float64 = 0.5*dxe
-    dy_deta::Float64 = 0.5*dye
-    jac::Float64 = dx_dxi*dy_deta
-
-    ww::Matrix{Float64} = zeros(NGLL, NGLL)
-    Ke2::Array{Float64,4} = zeros(NGLL,NGLL,NGLL,NGLL)
-    Ke::Array{Float64,3} = zeros(NGLL*NGLL,NGLL*NGLL, Nel)
-    ig::Matrix{Int64} = zeros(NGLL,NGLL)  # iterator
-    
-    #  term1::Float64 = 0.; term2::Float64 = 0.
-    del = Matrix{Float64}(I,NGLL,NGLL)  # identity matrix
-
-        @inbounds for eo in 1:Nel
-            Ke2 .= 0.
-
-            ww = W[:,:,eo]
-            term1 = 0.; term2 = 0.
-            for i in 1:NGLL, j in 1:NGLL
-                for k in 1:NGLL, l in 1:NGLL
-                    term1 = 0.; term2 = 0.
-                    for p in 1:NGLL
-                        term1 += del[i,k]*ww[k,p]*(jac/dy_deta^2)*H[j,p]*H[l,p]
-                        term2 += del[j,l]*ww[p,j]*(jac/dx_dxi^2)*H[i,p]*H[k,p]
-                    end
-                    Ke2[i,j,k,l] = term1 + term2
-                end
-            end
-            Ke[:,:,eo] = reshape(Ke2,NGLL*NGLL,NGLL*NGLL)
-        end
-    #  end
-
-    Ke
-end

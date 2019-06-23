@@ -308,7 +308,7 @@ function XiLfFunc!(LX, FltNglob, gamma_, xLf, muMax, cca, ccb, Seff)
     XiLf::Vector{Float64} = zeros(FltNglob)
 
     #  @inbounds for j = 1:FltNglob
-    @inbounds @fastmath for j = 1:FltNglob
+    @inbounds for j = 1:FltNglob
 
         # Compute time restricting parameters
         expr1 = -(cca[j] - ccb[j])/cca[j]
