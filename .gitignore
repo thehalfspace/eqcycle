@@ -1,7 +1,7 @@
 *.swp
 *.out
 *.pbs
-plots/*.png
-plots/*.pdf
-plots/*.jpg
+*.png
+*.pdf
+*.jpg
 *.DS_Store
