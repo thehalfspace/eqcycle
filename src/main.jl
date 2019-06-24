@@ -151,16 +151,16 @@ function main(P)
     #  hypo, time_, Vfmax
     nseis = length(P[4].out_seis)
     
-    output = results(zeros(P[1].FltNglob, 60000), zeros(P[1].FltNglob, 60000), 
-                     zeros(P[1].FltNglob, 60000), 
-                     zeros(80000), 
+    output = results(zeros(P[1].FltNglob, 8000), zeros(P[1].FltNglob, 8000), 
+                     zeros(P[1].FltNglob, 8000), 
+                     zeros(10000), 
                      zeros(P[1].FltNglob, 2000), zeros(P[1].FltNglob, 2000), 
                      zeros(P[1].FltNglob, 2000),
-                     zeros(100000,nseis), zeros(100000,nseis), zeros(100000,nseis),
+                     zeros(80000,nseis), zeros(80000,nseis), zeros(80000,nseis),
                      zeros(400), zeros(400), 
                      zeros(P[1].FltNglob, 400), zeros(P[1].FltNglob, 400), 
-                     zeros(P[1].FltNglob, 400), zeros(400), zeros(500000), 
-                     zeros(500000))
+                     zeros(P[1].FltNglob, 400), zeros(400), zeros(700000), 
+                     zeros(700000))
     
     # Save output variables at certain timesteps: define those timesteps
     tvsx::Float64 = 2*P[1].yr2sec  # 2 years for interseismic period
@@ -424,7 +424,7 @@ function main(P)
 
 
         # output variables at prescribed locations every 10 timesteps
-        if mod(it,1000) == 0
+        if mod(it,10) == 0
             rit += 1
             output.dSeis[rit,:] = d[P[4].out_seis]
             output.vSeis[rit,:] = v[P[4].out_seis]
@@ -467,6 +467,7 @@ function main(P)
     output.time_            = output.time_[1:it]
     output.Vfmax            = output.Vfmax[1:it]
 
+    #  return d, v, a, 2*v[P[4].iFlt] .+ P[2].Vpl
     return output
 
 end
