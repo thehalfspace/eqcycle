@@ -9,7 +9,7 @@ include("post/plots.jl")
 include("post/cumulative_slip.jl")
 
 # path to save files
-global path = "$(@__DIR__)plots/test01/"
+global path = "$(@__DIR__)/plots/test01/"
 
 # Deserialize the output
 using Serialization
