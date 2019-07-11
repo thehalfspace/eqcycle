@@ -4,13 +4,12 @@
 
 include("output.jl")
 
-include("scripts/earthquake_cycles.jl")
-include("scripts/plots.jl")
-include("scripts/cumulative_slip.jl")
+include("post/earthquake_cycles.jl")
+include("post/plots.jl")
+include("post/cumulative_slip.jl")
 
 # path to save files
-global path = "/Users/prithvithakur/everything/eqcycle/plots/test01/"
-#  global path = "/Users/prith/jsem2/plots/shallowdc4/"
+global path = "$(@__DIR__)plots/test01/"
 
 # Deserialize the output
 using Serialization

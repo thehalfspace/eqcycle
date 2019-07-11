@@ -24,7 +24,7 @@ function MwPlot(Mw500, Mw1500, Mw3000, Mw5000, Mw7000)
     cum7000 = cumsum(hist7000.weights[end:-1:1])[end:-1:1]
 
     fig = PyPlot.figure(figsize=(6,4.5), dpi = 120)
-    ax = fig[:add_subplot](111)
+    ax = fig.add_subplot(111)
 
     ax.plot(hist500.edges[1][1:end-1], cum500, ".", label="0.5 km width")
     ax.plot(hist1500.edges[1][1:end-1], cum1500, "*", label="1.5 km width")

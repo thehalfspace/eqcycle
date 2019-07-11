@@ -49,17 +49,17 @@ function test1(S, O, evno)
     sv = sv[:,1:j]
 
     fig = PyPlot.figure(figsize=(8,6))
-    ax = fig[:add_subplot](111)
+    ax = fig.add_subplot(111)
     
-    ax[:plot](sv, S.FltX/1e3, ".--", label="a", lw = 1)
-    ax[:set_xlabel]("Slip rate (m/s)")
-    ax[:set_ylabel]("Depth (km)")
-    ax[:set_title]("Slip rate for one event")
-    #  ax[:set_xlim]([0, 0.02])
-    ax[:set_ylim]([-24, 0])
+    ax.plot(sv, S.FltX/1e3, ".--", label="a", lw = 1)
+    ax.set_xlabel("Slip rate (m/s)")
+    ax.set_ylabel("Depth (km)")
+    ax.set_title("Slip rate for one event")
+    #  ax.set_xlim([0, 0.02])
+    ax.set_ylim([-24, 0])
     show()
     
     figname = string(path, "slipvel.pdf")
-    fig[:savefig](figname, dpi = 300)
+    fig.savefig(figname, dpi = 300)
 end
 
