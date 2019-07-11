@@ -26,6 +26,7 @@ using PyPlot
 
 #  end
 
+
 # Plot friction parameters
 function fricPlot(cca, ccb, FltX)
     
@@ -161,7 +162,7 @@ function cumSlipPlot(delfsec, delf5yr, FltX)
     #  ax.set_ylabel("Depth (km)")
     #  ax.set_title("Cumulative Slip History")
     ax.set_ylim([0,24])
-    #  ax.set_xlim([5,20])
+    ax.set_xlim([1,20])
     ax.invert_yaxis()
     show()
     

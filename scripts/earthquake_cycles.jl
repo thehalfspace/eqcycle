@@ -6,8 +6,18 @@
 using StatsBase
 using PyPlot
 
-PyPlot.matplotlib[:rc]("patch.force_edgecolor=true")
+PyPlot.matplotlib.rc("patch.force_edgecolor=true")
 
+# get index of start of rupture
+function get_index(seismic_stress, taubefore)
+
+    index_start = zeros(Int, length(taubefore[1,:]))
+    for i in 2:length(taubefore[1,:])
+        index_start[i] = findall(O.seismic_stress[1921,:] .== O.taubefore[1921,i])[1]
+    end
+
+    index_start
+end
 #-------------------------------
 # Compute hypocenter locations
 #------------------------------
@@ -175,12 +185,12 @@ function MwPlot(Mw)
 
     #  ax.plot](hist.edges[1][1:end-1], hist.weights, ".", label="Non-cumulative")
     ax.plot(hist.edges[1][1:end-1], cum, "k.--", markersize=20) #, label="Cumulative")
-    #  ax.set_xlabel("Moment Magnitude (Mw)")
-    #  ax.set_ylabel("Number of Earthquakes")
+    ax.set_xlabel("Moment Magnitude (Mw)")
+    ax.set_ylabel("Number of Earthquakes")
     ax.set_yscale("log")
     #  ax.set_title("Magnitude-frequency distribution")
     #  ax.set_xlim([2, 7])
-    ax.set_ylim([1, 30])
+    ax.set_ylim([1, 100])
     #  ax.legend(loc="upper right")
     show()
 
