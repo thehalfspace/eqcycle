@@ -84,7 +84,7 @@ function main(P)
     #  damage_amount::Float64 = 1.0
 
     #  wgll2::Array{Float64,2} = S.wgll*S.wgll';
-    
+
     # Time solver variables
     dt::Float64 = P[2].dt0
     dtmin::Float64 = dt
@@ -247,6 +247,10 @@ function main(P)
                 
                 # direct inversion
                 #  dnew = -(kni\rhs)
+               
+                #  if it == 1 && p1 == 2
+                    #  return Ksparse, F, rhs, kni, dnew, p
+                #  end
 
                 # mgcg
                 dnew = cg!(dnew, kni, rhs, Pl=p, tol=1e-6)

@@ -11,10 +11,11 @@ function fricDepth(FltX)
     FltNglob = length(FltX)
     
     # Friction with depth
-    cca::Array{Float64} = repeat([0.015], FltNglob)
-    ccb::Array{Float64} = repeat([0.020], FltNglob)
+    cca::Array{Float64} = repeat([0.05], FltNglob)
+    ccb::Array{Float64} = repeat([0.044], FltNglob)
 
     a_b = cca - ccb
+    #  fP1 = [0.031, 0e3]
     fP1 = [0, -1.2e3]
     fP2 = [-0.0041, -2e3]
     fP3 = [-0.0041, -12e3]
@@ -35,6 +36,7 @@ function fricDepth(FltX)
 
     #  cca[fric_depth4] .= Int1D(fP4, fP5, FltX[fric_depth4]) .+ 0.0001
     cca .= ccb .+ a_b
+    #  ccb .= cca .- a_b
 
     return cca, ccb
 end
@@ -47,7 +49,7 @@ function SeffDepth(FltX)
     FltNglob = length(FltX)
 
     Seff::Array{Float64} = repeat([50e6], FltNglob)
-    sP1 = [12e6 0]
+    sP1 = [5e6 0]
     sP2 = [50e6 -2e3]
     Seff_depth = findall(abs.(FltX) .<= abs(sP2[2]))
     Seff[Seff_depth] = Int1D(sP1, sP2, FltX[Seff_depth])
@@ -62,7 +64,7 @@ function tauDepth(FltX)
     FltNglob = length(FltX)
 
     tauo::Array{Float64} = repeat([22.5e6], FltNglob)
-    tP1 = [1e6 0]
+    tP1 = [0.01e6 0]
     tP2 = [30e6 -2e3]
     tP3 = [30e6 -12e3]
     tP4 = [22.5e6 -17e3]
