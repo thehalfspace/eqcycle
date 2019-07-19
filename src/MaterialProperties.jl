@@ -80,6 +80,7 @@ function mat_trap(NelX, NelY,NGLL, dxe, dye, x,y, wgll2)
     jac::Float64 = dx_dxi*dy_deta
     
     mu::Matrix{Float64} = zeros(NGLL, NGLL)
+    rho::Matrix{Float64} = zeros(NGLL, NGLL)
     W::Array{Float64,3} = zeros(NGLL, NGLL, NelX*NelY)
     rhoglob, vsglob = rigid(x,y)
     muglob = rhoglob.*(vsglob.^2)
@@ -87,6 +88,7 @@ function mat_trap(NelX, NelY,NGLL, dxe, dye, x,y, wgll2)
     @inbounds for ey in 1:NelY
         @inbounds for ex in 1:NelX
             eo = (ey-1)*NelX + ex
+            ig = iglob[:,:,eo]
             
             mu[:,:] = muglob[ig]
             rho[:,:] = rhoglob[ig]

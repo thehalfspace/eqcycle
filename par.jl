@@ -84,7 +84,7 @@ function setParameters(FZdepth, res)
     Vo::Vector{Float64} = repeat([1e-6], FltNglob)		#	Reference velocity 'Vo'
     xLf::Vector{Float64} = repeat([0.008], FltNglob)    #	Dc (Lc) = 8 mm
 
-    Vthres::Float64 = 0.001
+    Vthres::Float64 = 0.01
     Vevne::Float64 = Vthres
 
     #-----------#
@@ -141,11 +141,10 @@ function setParameters(FZdepth, res)
 
     # Material properties for a narrow rectangular damaged zone of 
     # half-thickness ThickY and depth ThickX 
-    W = material_properties(NelX, NelY,NGLL,dxe, dye, ThickX, ThickY, wgll2, rho1, rho2, vs1, vs2)
-
+    #  W = material_properties(NelX, NelY,NGLL,dxe, dye, ThickX, ThickY, wgll2, rho1, rho2, vs1, vs2)
 
     # Material properties for trapezoid damaged zone
-    #  M, W =  mat_trap(NelX, NelY,NGLL, dxe, dye, x,y, wgll2)
+    M, W =  mat_trap(NelX, NelY,NGLL, dxe, dye, x,y, wgll2)
 
     # Stiffness Assembly
     Ksparse::SparseMatrixCSC{Float64} = stiffness_assembly(NGLL, NelX, NelY, dxe,dye, nglob, iglob, W) 
