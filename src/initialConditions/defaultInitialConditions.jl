@@ -11,12 +11,12 @@ function fricDepth(FltX)
     FltNglob = length(FltX)
     
     # Friction with depth
-    cca::Array{Float64} = repeat([0.05], FltNglob)
-    ccb::Array{Float64} = repeat([0.044], FltNglob)
+    cca::Array{Float64} = repeat([0.015], FltNglob)
+    ccb::Array{Float64} = repeat([0.019], FltNglob)
 
     a_b = cca - ccb
-    #  fP1 = [0.031, 0e3]
-    fP1 = [0, -1.2e3]
+    fP1 = [0.012, 0e3]
+    #  fP1 = [0, -1.2e3]
     fP2 = [-0.0041, -2e3]
     fP3 = [-0.0041, -12e3]
     fP4 = [0.015, -17e3]
@@ -49,7 +49,7 @@ function SeffDepth(FltX)
     FltNglob = length(FltX)
 
     Seff::Array{Float64} = repeat([50e6], FltNglob)
-    sP1 = [5e6 0]
+    sP1 = [3e6 0]
     sP2 = [50e6 -2e3]
     Seff_depth = findall(abs.(FltX) .<= abs(sP2[2]))
     Seff[Seff_depth] = Int1D(sP1, sP2, FltX[Seff_depth])

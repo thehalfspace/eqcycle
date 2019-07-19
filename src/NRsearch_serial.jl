@@ -5,14 +5,16 @@
 # Fault Boundary function
 function FBC!(IDstate, P::params_farray, NFBC, FltNglob, psi1, Vf1, tau1, psi2, Vf2, tau2, psi, Vf, FltVfree, dt)
 
-    tauNR::Vector{Float64} = zeros(FltNglob)
+    #  tauNR::Vector{BigFloat} = zeros(FltNglob)
+    tauNR::BigFloat = 0.
 
    for j = NFBC:FltNglob 
 
+       tauNR = 0.
         psi1[j] = IDS!(P.xLf[j], P.Vo[j], psi[j], dt, Vf[j], 1e-5, IDstate)
 
         Vf1[j], tau1[j] = NRsearch!(P.fo[j], P.Vo[j], P.cca[j], P.ccb[j], P.Seff[j],
-                                    tauNR[j], P.tauo[j], psi1[j], P.FltZ[j], FltVfree[j])
+                                    tauNR, P.tauo[j], psi1[j], P.FltZ[j], FltVfree[j])
     
         if Vf[j] > 1e10 || isnan(Vf[j]) == 1 || isnan(tau1[j]) == 1
             
@@ -45,7 +47,11 @@ end
 function NRsearch!(fo, Vo, cca, ccb, Seff, tau, tauo, psi, FltZ, FltVfree)
 
     Vw = 1e10
-    fact = 1 + (Vo/Vw)*exp(-psi)
+    fact = 1. + (Vo/Vw)*exp(-psi)
+    fa::BigFloat = 0.
+    help1::BigFloat = 0.
+    help2::BigFloat = 0.
+    delta::BigFloat = 0.
 
     # NR search point by point for tau if Vf < Vlimit
     eps = 0.001*cca*Seff
@@ -73,7 +79,9 @@ function NRsearch!(fo, Vo, cca, ccb, Seff, tau, tauo, psi, FltZ, FltVfree)
             # Save simulation results
             #filename = string(dir, "/data", name, "nrfail.jld2")
             #@save filename 
-            @error("NR search fails to converge")
+            #  @error("NR search fails to converge")
+
+            return Float64(Vf), Float64(tau)
         end
     end
 
@@ -86,5 +94,5 @@ function NRsearch!(fo, Vo, cca, ccb, Seff, tau, tauo, psi, FltZ, FltVfree)
 
     Vf = Vo*(help1 - help2)
 
-    return Vf, tau
+    return Float64(Vf), Float64(tau)
 end
