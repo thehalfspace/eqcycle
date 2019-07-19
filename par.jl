@@ -144,7 +144,7 @@ function setParameters(FZdepth, res)
     #  W = material_properties(NelX, NelY,NGLL,dxe, dye, ThickX, ThickY, wgll2, rho1, rho2, vs1, vs2)
 
     # Material properties for trapezoid damaged zone
-    M, W =  mat_trap(NelX, NelY,NGLL, dxe, dye, x,y, wgll2)
+    M, W =  mat_trap(NelX, NelY,NGLL, iglob, M, dxe, dye, x,y, wgll2)
 
     # Stiffness Assembly
     Ksparse::SparseMatrixCSC{Float64} = stiffness_assembly(NGLL, NelX, NelY, dxe,dye, nglob, iglob, W) 
