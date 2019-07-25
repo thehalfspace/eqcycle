@@ -45,6 +45,10 @@ delfafter = O.delfafter
 hypo = O.hypo
 time_ = O.time_
 Vfmax = O.Vfmax
+yr2sec = P1.yr2sec
+
+# time-index of start of rupture
+start_index = get_index(seismic_stress, O.taubefore)
 
 rho1 = 2670
 vs1 = 3464
@@ -53,4 +57,21 @@ vs2 = 0.6*vs1
 mu = rho2*vs2^2
 
 Mw, del_sigma, fault_slip = moment_magnitude_new(mu, P1, FltX, delfafter, stressdrops, O.time_);
+
+
+#-----------------------------
+# test new code snippets here
+#-----------------------------
+using Plots
+# animate rupture tip
+function anim_rupture(stress, FltX)
+    
+    anim = @animate for i = 1:length(stress[1,:])
+        Plots.plot(stress[:,i], yaxis=("Depth (km)", -FltX./1e3, :flip), leg=false)
+
+    end
+
+    gif(anim, "$(@__DIR__)/plots/temp.gif", fps=5)
+
+end
 

@@ -25,7 +25,7 @@ using FEMSparse
 
 include("$(@__DIR__)/par.jl")	    #	Set Parameters
 
-P = setParameters(24e3,20)      # args = fault zone depth, resolution
+P = setParameters(24e3,24)      # args = fault zone depth, resolution
 
 include("$(@__DIR__)/src/dtevol.jl")          
 include("$(@__DIR__)/src/NRsearch_serial.jl")

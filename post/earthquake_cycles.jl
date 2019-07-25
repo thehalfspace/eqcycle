@@ -5,15 +5,23 @@
 
 using StatsBase
 using PyPlot
+using LinearAlgebra
 
 PyPlot.matplotlib.rc("patch.force_edgecolor=true")
 
 # get index of start of rupture
 function get_index(seismic_stress, taubefore)
 
+    len = length(taubefore[:,1])
     index_start = zeros(Int, length(taubefore[1,:]))
-    for i in 2:length(taubefore[1,:])
-        index_start[i] = findall(O.seismic_stress[1921,:] .== O.taubefore[1921,i])[1]
+    for i in 1:length(taubefore[1,:])
+        temp = zeros(length(seismic_stress[1,:]))
+        #  index_start[i] = findall(seismic_stress[len,:] .== taubefore[len,i])[1]
+        for j in 1:length(seismic_stress[1,:])
+            temp[j] = norm(seismic_stress[:,j] .- taubefore[:,i])
+        end
+
+        index_start[i] = findmin(temp)[2]
     end
 
     index_start
