@@ -2,6 +2,30 @@
 #   ISOLATE EACH EARTHQUAKE STUFF
 ########################################
 
+function stress_evol(seismic_stress, FltX)
+
+    #  x_axis = seismic_stress[1:5:end,:]
+
+    fig = PyPlot.figure()
+    ax = fig.add_subplot(111)
+
+    for i in 1:length(seismic_stress[1,:])
+        ax.plot(seismic_stress[:,i].*1e-1 .+ 1e-1*i, -FltX./1e3, "k-")
+    end
+    ax.xaxis.set_ticklabels([])
+    ax.set_xlabel("Shear Stress every second")
+    ax.set_ylabel("Depth (km)")
+    #  ax.set_title("Shear Stress evolut")
+    ax.set_ylim([0, 15])
+    ax.invert_yaxis()
+    fig.tight_layout()
+    show()
+
+    figname = string(path, "ss_evol.png")
+    fig.savefig(figname, dpi = 300)
+
+end
+
 # Proposal figure stuff
 function fig1(delfsec, delf5yr, FltX, Mw, hypo)
     indx = findall(abs.(FltX) .<= 18e3)[1]

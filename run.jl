@@ -39,7 +39,7 @@ simulation_time = @elapsed O = @time main(P)
 
 # Save output to file
 using Serialization
-open("$(@__DIR__)/data/test01.out", "w") do f
+open("$(@__DIR__)/data/test02.out", "w") do f
     serialize(f,O)
     serialize(f, simulation_time)
     serialize(f, P)

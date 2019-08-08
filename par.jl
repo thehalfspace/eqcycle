@@ -41,7 +41,7 @@ function setParameters(FZdepth, res)
 
     yr2sec::Int = 365*24*60*60
     
-    Total_time::Int = 200*yr2sec     # Set the total time for simulation here
+    Total_time::Int = 150*yr2sec     # Set the total time for simulation here
 
     CFL::Float64 = 0.6	#	Courant stability number
      
@@ -50,7 +50,7 @@ function setParameters(FZdepth, res)
     # Some other time variables used in the loop
     dtincf::Float64 = 1.2
     gamma_::Float64 = pi/4
-    dtmax::Int = 500 * 24 * 60*60		# 50 days
+    dtmax::Int = 700 * 24 * 60*60		# 50 days
 
 
     #...................
@@ -66,13 +66,13 @@ function setParameters(FZdepth, res)
     #  vs1::Float64 = 0.6*3464
 
     rho2::Float64 = 2500
-    vs2::Float64 = 0.6*vs1
+    vs2::Float64 = 0.65*vs1
     
     ETA = 0.
 
     # Low velocity layer dimensions
     ThickX::Float64 = LX - ceil(FZdepth/dxe)*dxe # ~FZdepth m deep
-    ThickY::Float64 = ceil(0.25e3/dye)*dye   # ~ 0.25*2 km wide
+    ThickY::Float64 = ceil(68/dye)*dye   # ~ 0.25*2 km wide
 
     #.......................
     # EARTHQUAKE PARAMETERS

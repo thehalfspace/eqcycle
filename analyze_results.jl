@@ -13,7 +13,7 @@ global path = "$(@__DIR__)/plots/test01/"
 
 # Deserialize the output
 using Serialization
-open("data/dc8_b20.out") do f
+open("data/test02.out") do f
     global O, sim_time, P, S
     O = deserialize(f)
     sim_time = deserialize(f)
@@ -62,7 +62,30 @@ Mw, del_sigma, fault_slip = moment_magnitude_new(mu, P1, FltX, delfafter, stress
 #-----------------------------
 # test new code snippets here
 #-----------------------------
-using Plots
+function stress_evol(seismic_stress, FltX)
+
+    #  x_axis = seismic_stress[1:5:end,:]
+
+    fig = PyPlot.figure()
+    ax = fig.add_subplot(111)
+
+    for i in 1:length(seismic_stress[1,:])
+        ax.plot(seismic_stress[:,i] .+ 1e-2*i, -FltX./1e3, "k-")
+    end
+    ax.set_xlabel("Shear Stress every second")
+    ax.set_ylabel("Depth (km)")
+    #  ax.set_title("Shear Stress evolut")
+    ax.set_ylim([0, 24])
+    ax.invert_yaxis()
+    fig.tight_layout()
+    show()
+
+    figname = string(path, "ss_evol.png")
+    fig.savefig(figname, dpi = 300)
+
+end
+
+#using Plots
 # animate rupture tip
 function anim_rupture(stress, FltX)
     

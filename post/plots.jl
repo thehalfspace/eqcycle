@@ -92,7 +92,7 @@ function MwPlot(Mw)
     ax.set_yscale("log")
     #  ax.set_title("Magnitude-frequency distribution")
     #  ax.set_xlim([2, 7])
-    ax.set_ylim([1, 100])
+    ax.set_ylim([1, 200])
     #  ax.legend(loc="upper right")
     show()
 
