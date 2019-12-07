@@ -21,11 +21,11 @@ using IterativeSolvers
 using FEMSparse
 #  using CuthillMcKee
 #  using Base.Threads
-#  BLAS.set_num_threads(2)
+#  BLAS.set_num_threads(6)
 
 include("$(@__DIR__)/par.jl")	    #	Set Parameters
 
-P = setParameters(24e3,24)      # args = fault zone depth, resolution
+P = setParameters(24e3,20)      # args = fault zone depth, resolution
 
 include("$(@__DIR__)/src/dtevol.jl")          
 include("$(@__DIR__)/src/NRsearch_serial.jl")
@@ -39,7 +39,7 @@ simulation_time = @elapsed O = @time main(P)
 
 # Save output to file
 using Serialization
-open("$(@__DIR__)/data/test02.out", "w") do f
+open("$(@__DIR__)/data_new/width75_cs60.out", "w") do f
     serialize(f,O)
     serialize(f, simulation_time)
     serialize(f, P)

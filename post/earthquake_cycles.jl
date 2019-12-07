@@ -3,11 +3,10 @@
 # FROM SIMULATION OUTPUT
 #################################
 
-using StatsBase
-using PyPlot
+#  using StatsBase
+#  using PyPlot
 using LinearAlgebra
 
-PyPlot.matplotlib.rc("patch.force_edgecolor=true")
 
 # get index of start of rupture
 function get_index(seismic_stress, taubefore)
@@ -134,22 +133,22 @@ end
 #--------------------------
 # Earthquake scaling laws
 #--------------------------
-function scaling(a,b)
+#  function scaling(a,b)
 
-    fig = PyPlot.figure(figsize=(12,9))
-    ax = fig.add_subplot(111)
+    #  fig = PyPlot.figure(figsize=(12,9))
+    #  ax = fig.add_subplot(111)
 
-    ax.plot(a,b, "k.", markersize=20)
-    ax.set_xlabel("Slip (m)")
-    ax.set_ylabel("Rupture Length (m)")
-    #  ax.set_yscale("log")
-    #  ax.set_xscale("log")
-    ax.set_title("Rupture length vs Slip")
-    #  ax.legend(loc="upper right")
-    show()
+    #  ax.plot(a,b, "k.", markersize=20)
+    #  ax.set_xlabel("Slip (m)")
+    #  ax.set_ylabel("Rupture Length (m)")
+    #  #  ax.set_yscale("log")
+    #  #  ax.set_xscale("log")
+    #  ax.set_title("Rupture length vs Slip")
+    #  #  ax.legend(loc="upper right")
+    #  show()
 
-    figname = string(path, "scaling1.png")
-    fig.savefig(figname, dpi = 300)
-end
+    #  figname = string(path, "scaling1.png")
+    #  fig.savefig(figname, dpi = 300)
+#  end
 
 

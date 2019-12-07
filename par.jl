@@ -41,7 +41,7 @@ function setParameters(FZdepth, res)
 
     yr2sec::Int = 365*24*60*60
     
-    Total_time::Int = 150*yr2sec     # Set the total time for simulation here
+    Total_time::Int = 1000*yr2sec     # Set the total time for simulation here
 
     CFL::Float64 = 0.6	#	Courant stability number
      
@@ -66,13 +66,13 @@ function setParameters(FZdepth, res)
     #  vs1::Float64 = 0.6*3464
 
     rho2::Float64 = 2500
-    vs2::Float64 = 0.65*vs1
+    vs2::Float64 = 0.60*vs1
     
     ETA = 0.
 
     # Low velocity layer dimensions
     ThickX::Float64 = LX - ceil(FZdepth/dxe)*dxe # ~FZdepth m deep
-    ThickY::Float64 = ceil(68/dye)*dye   # ~ 0.25*2 km wide
+    ThickY::Float64 = ceil(68*1/dye)*dye   # ~ 0.25*2 km wide
 
     #.......................
     # EARTHQUAKE PARAMETERS
@@ -84,7 +84,7 @@ function setParameters(FZdepth, res)
     Vo::Vector{Float64} = repeat([1e-6], FltNglob)		#	Reference velocity 'Vo'
     xLf::Vector{Float64} = repeat([0.008], FltNglob)    #	Dc (Lc) = 8 mm
 
-    Vthres::Float64 = 0.01
+    Vthres::Float64 = 0.001
     Vevne::Float64 = Vthres
 
     #-----------#
@@ -115,8 +115,8 @@ function setParameters(FZdepth, res)
     # y coordinate = off-fault distance (+ve)
      
 
-    x_out = [6.0, 6.0, 6.0, 6.0, 6.0, 6.0].*(-1e3)  # x coordinate of receiver
-    y_out = [66.0, 130.0, 198.0, 250.0, 330.0, 396.0]     # y coordinate of receiver
+    x_out = [-48.0, -48.0, -48.0, -46.0, -44.0, -40.0].*(1e3)  # x coordinate of receiver
+    y_out = [0.0, 150.0, 300.0, 0.0, 0.0, 0.0]     # y coordinate of receiver
     #  n_receiver = length(x_receiver) # number of receivers
 
     x_out, y_out, out_seis, dist = FindNearestNode(x_out, y_out, x, y) 
@@ -141,10 +141,12 @@ function setParameters(FZdepth, res)
 
     # Material properties for a narrow rectangular damaged zone of 
     # half-thickness ThickY and depth ThickX 
-    #  W = material_properties(NelX, NelY,NGLL,dxe, dye, ThickX, ThickY, wgll2, rho1, rho2, vs1, vs2)
+    W = material_properties(NelX, NelY,NGLL,dxe, dye, ThickX, ThickY, wgll2, rho1, rho2, vs1, vs2)
 
     # Material properties for trapezoid damaged zone
-    M, W =  mat_trap(NelX, NelY,NGLL, iglob, M, dxe, dye, x,y, wgll2)
+    #  M .= 0
+    #  M, W =  mat_trap(NelX, NelY,NGLL, iglob, M, dxe, dye, x,y, wgll2)
+    #  M, W =  mat_gauss(NelX, NelY,NGLL, iglob, M, dxe, dye, x,y, wgll2)
 
     # Stiffness Assembly
     Ksparse::SparseMatrixCSC{Float64} = stiffness_assembly(NGLL, NelX, NelY, dxe,dye, nglob, iglob, W) 
@@ -217,6 +219,8 @@ function setParameters(FZdepth, res)
     # Display important parameters
     println("Total number of nodes on fault: ", FltNglob)
     println("Average node spacing: ", LX/(FltNglob-1), " m")
+    println("Damaged Zone Thickness: ", ThickY, " m")
+    println("Damaged Zone Depth: ", LX - ThickX, " m")
     @printf("dt: %1.09f s\n", dt)
 
 

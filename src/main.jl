@@ -151,22 +151,22 @@ function main(P)
     #  hypo, time_, Vfmax
     nseis = length(P[4].out_seis)
     
-    output = results(zeros(P[1].FltNglob, 8000), zeros(P[1].FltNglob, 8000), 
-                     zeros(P[1].FltNglob, 8000), 
-                     zeros(10000), 
-                     zeros(P[1].FltNglob, 2000), zeros(P[1].FltNglob, 2000), 
-                     zeros(P[1].FltNglob, 2000),
-                     zeros(80000,nseis), zeros(80000,nseis), zeros(80000,nseis),
+    output = results(zeros(P[1].FltNglob, 30000), zeros(P[1].FltNglob, 30000), 
+                     zeros(P[1].FltNglob, 30000), 
+                     zeros(30000), 
+                     zeros(P[1].FltNglob, 4000), zeros(P[1].FltNglob, 4000), 
+                     zeros(P[1].FltNglob, 4000),
+                     zeros(190000,nseis), zeros(190000,nseis), zeros(190000,nseis),
                      zeros(400), zeros(400), 
                      zeros(P[1].FltNglob, 400), zeros(P[1].FltNglob, 400), 
-                     zeros(P[1].FltNglob, 400), zeros(400), zeros(700000), 
-                     zeros(700000))
+                     zeros(P[1].FltNglob, 400), zeros(400), zeros(1900000), 
+                     zeros(1900000))
     
     # Save output variables at certain timesteps: define those timesteps
-    tvsx::Float64 = 2*P[1].yr2sec  # 2 years for interseismic period
+    tvsx::Float64 = 5*P[1].yr2sec  # 2 years for interseismic period
     tvsxinc::Float64 = tvsx
 
-    tevneinc::Float64 = 0.1    # 0.5 second for seismic period
+    tevneinc::Float64 = 0.5    # 0.5 second for seismic period
     delfref = zeros(P[1].FltNglob)
 
     # Iterators
@@ -387,7 +387,7 @@ function main(P)
             output.is_slip[:,ntvsx] = 2*d[P[4].iFlt] .+ P[2].Vpl*t
             output.is_slipvel[:,ntvsx] = 2*v[P[4].iFlt] .+ P[2].Vpl
             output.is_stress[:,ntvsx] = (tau + P[3].tauo)./1e6
-            output.index_eq[idd] = 1
+            #  output.index_eq[idd] = 1
 
             tvsx = tvsx + tvsxinc
         end
@@ -403,7 +403,7 @@ function main(P)
                 output.seismic_slip[:,nevne] = 2*d[P[4].iFlt] .+ P[2].Vpl*t
                 output.seismic_slipvel[:,nevne] = 2*v[P[4].iFlt] .+ P[2].Vpl
                 output.seismic_stress[:,nevne] = (tau + P[3].tauo)./1e6
-                output.index_eq[idd] = 2
+                #  output.index_eq[idd] = 2
             end
 
             if idelevne == 1 && (t - tevneb) > tevne
@@ -413,7 +413,7 @@ function main(P)
                 output.seismic_slip[:,nevne] = 2*d[P[4].iFlt] .+ P[2].Vpl*t
                 output.seismic_slipvel[:,nevne] = 2*v[P[4].iFlt] .+ P[2].Vpl
                 output.seismic_stress[:,nevne] = (tau + P[3].tauo)./1e6
-                output.index_eq[idd] = 2
+                #  output.index_eq[idd] = 2
                 tevne = tevne + tevneinc
             end
 
@@ -455,7 +455,7 @@ function main(P)
     output.seismic_stress   = output.seismic_stress[:,1:nevne]
     output.seismic_slipvel  = output.seismic_slipvel[:,1:nevne]
     output.seismic_slip     = output.seismic_slip[:,1:nevne]
-    output.index_eq         = output.index_eq[1:idd]
+    #  output.index_eq         = output.index_eq[1:idd]
     output.is_stress        = output.is_stress[:,1:ntvsx]
     output.is_slipvel       = output.is_slipvel[:,1:ntvsx]
     output.is_slip          = output.is_slip[:,1:ntvsx]

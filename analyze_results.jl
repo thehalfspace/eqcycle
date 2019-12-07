@@ -7,13 +7,14 @@ include("output.jl")
 include("post/earthquake_cycles.jl")
 include("post/plots.jl")
 include("post/cumulative_slip.jl")
+#  include("post/comparison.jl")
 
 # path to save files
-global path = "$(@__DIR__)/plots/test01/"
+global path = "$(@__DIR__)/plots/trapezoid/"
 
 # Deserialize the output
 using Serialization
-open("data/test02.out") do f
+open("data_new/trapezoid.out") do f
     global O, sim_time, P, S
     O = deserialize(f)
     sim_time = deserialize(f)
@@ -89,12 +90,12 @@ end
 # animate rupture tip
 function anim_rupture(stress, FltX)
     
-    anim = @animate for i = 1:length(stress[1,:])
-        Plots.plot(stress[:,i], yaxis=("Depth (km)", -FltX./1e3, :flip), leg=false)
+    #  anim = @animate for i = 1:length(stress[1,:])
+        #  Plots.plot(stress[:,i], yaxis=("Depth (km)", -FltX./1e3, :flip), leg=false)
 
-    end
+    #  end
 
-    gif(anim, "$(@__DIR__)/plots/temp.gif", fps=5)
+    #  gif(anim, "$(@__DIR__)/plots/temp.gif", fps=5)
 
 end
 
