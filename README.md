@@ -19,9 +19,9 @@ This project is incomplete, work in progress. To run the program
 
 Please cite the following if using this code:
 
-Kaneko, Y., Ampuero, J. P., & Lapusta, N. (2011). Spectral‐element simulations of long‐term fault slip: Effect of low‐rigidity layers on earthquake‐cycle dynamics. Journal of Geophysical Research: Solid Earth, 116(B10).
+Thakur, P., Huang, Y., & Kaneko, Y. Effects of low‐velocity fault damage zones on long‐term earthquake behaviors on mature strike‐slip faults. Journal of Geophysical Research: Solid Earth, e2020JB019587.
 
-Thakur et al, TBD.
+Kaneko, Y., Ampuero, J. P., & Lapusta, N. (2011). Spectral‐element simulations of long‐term fault slip: Effect of low‐rigidity layers on earthquake‐cycle dynamics. Journal of Geophysical Research: Solid Earth, 116(B10).
 
 
 ### Changelog:
