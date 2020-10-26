@@ -5,7 +5,7 @@
 
 ## Spectral element method for earthquake cycle simulations with dynamic treatment of inertial effects.
 
-Please check [Spear](https://github.com/thehalfspace/Spear) for an updated version.
+Please check [Spear](https://github.com/thehalfspace/Spear) for an updated version of this code.
 
 Written in Julia 1.1
 
